@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "/home/tinmar/.arduino15/packages/esp32/hardware/esp32/1.0.4/cores/esp32",
+                "/home/tinmar/.arduino15/packages/esp32/hardware/esp32/1.0.4/libraries",
+                "/home/tinmar/.arduino15/packages/esp32/hardware/esp32/1.0.4/tools/sdk/include/esp32/",
+                "/home/tinmar/.arduino15/packages/esp32/tools/**",
+                "/home/tinmar/Arduino/libraries/**",
+                "/home/tinmar/Applications/arduino-1.8.13/libraries/**",
+                "/home/tinmar/.arduino15/packages/esp32/hardware/esp32/1.0.4/**",
+                "/home/tinmar/Applications/arduino-1.8.13/hardware/arduino/avr/cores/arduino",
+                "/home/tinmar/Applications/arduino-1.8.13/hardware/tools/avr/avr/include",
+                "/home/tinmar/.arduino15/packages/esp32/hardware/esp32/1.0.4/variants/doitESP32devkitV1" // for pin_arduino.h
+            ],
+            "forcedInclude": [
+                "${workspaceFolder}/lib/JPI/src/API.conf.h"
+            ],
+            "defines": [
+                "USBCON",
+                "ARDUINO=150"
+            ],
+            "intelliSenseMode": "clang-x64",
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++14"
+        }
+    ],
+    "version": 4
+}

@@ -1,0 +1,3 @@
+[submodule "lib/JPI"]
+	path = lib/JPI
+	url = https://github.com/MartinHN/JPICppCli.git

@@ -1,0 +1,7 @@
+ESP32 : basic relay announcing itslef and its capacities via JPI lib
+
+
+Compile It
+##
+make sure you use vscode/ Arduino ext and modify iclude path in .vscode/arduino.json
+if not using vscode it should be easy to put the flags in platform.local.txt
