@@ -12,8 +12,8 @@ int relayPin = 3;
 
 LightAPI root;
 
-std::string type = "light";
-std::string myOSCID = "";
+std::string type = "relay";
+std::string myOSCID = "1";
 
 void setup() {
   // Pour a bowl of serial
