@@ -1,29 +1,51 @@
 #pragma once
 #include "./lib/JPI/src/API.hpp"
-#include "LightAPI.h"
-
+#include "ESPRTC.h"
+#include "RelayAPI.h"
+#include "SchedulerAPI.h"
 struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
 
-  LightAPI lightapi;
+  RelayAPI relayApi;
+  SchedulerAPI scheduleAPI;
+  ESPRTC rtc;
   RootAPI() : APIAndInstance<RootAPI>(this), MapNode() {
 
-    rFunction<std::string>("getState", &RootAPI::getState);
-    rFunction<void, std::string>("setState", &RootAPI::setState);
+    // rFunction<std::string>("getState", &RootAPI::getState);
+    // rFunction<void, std::string>("setState", &RootAPI::setState);
 
     // rFunction<std::string, std::string>("getFile", &RootAPI::getFile);
     // rFunction<bool, std::string, std::string>("saveFile",
     // &RootAPI::saveFile); rFunction<std::string>("ls", &RootAPI::ls);
 
+    rGetter<int>("rssi", [this](RootAPI &) {
+      // Serial.print("getting rssi  ");
+      // Serial.println((int)WiFi.RSSI());
+      return (int)WiFi.RSSI();
+    });
+
     rTrig("reboot", &RootAPI::reboot);
-    addChild("light", &lightapi);
+
+    // childs
+    addChild("relay", &relayApi);
+    addChild("schedule", &scheduleAPI);
+    addChild("rtc", &rtc);
   }
 
   RootAPI(RootAPI &) = delete;
 
-  bool setup() { return lightapi.setup(); }
+  bool setup() override {
+    bool res = true;
+    for (auto c : childNodes) {
+      PRINT("setting up ");
+      PRINTLN(c->idInParent.c_str());
+      res &= c->setup();
+    }
+    PRINTLN("root is all setup");
+    return res;
+  }
 
-  void setState(std::string st) { APISerializer::stateToNode(this, st); }
-  std::string getState() { return APISerializer::stateFromNode(this); }
+  // void setState(std::string st) { APISerializer::stateToNode(this, st); }
+  // std::string getState() { return APISerializer::stateFromNode(this); }
 
   void reboot() {
     delay(1000);
