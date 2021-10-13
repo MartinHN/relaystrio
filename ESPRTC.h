@@ -11,8 +11,6 @@
 struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
 
   const char *ntpServer = "pool.ntp.org";
-  // const long gmtOffset_sec = 3600;
-  // const int daylightOffset_sec = 3600;
 
   // TwoWire wire;
   RtcDS1307<TwoWire> rtc;

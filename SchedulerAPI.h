@@ -3,6 +3,7 @@
 
 #define SCHEDULE_TESTS 1
 
+struct YSchedule {};
 struct SchedulerAPI : public APIAndInstance<SchedulerAPI>, LeafNode {
 
   SchedulerAPI() : APIAndInstance<SchedulerAPI>(this) {}
