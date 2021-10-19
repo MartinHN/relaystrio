@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#define DBG_MSG 0
+#define DBG_MSG 1
 
 #if DBG_MSG
 #define DBGMSG(x) PRINT(x)
@@ -27,15 +27,12 @@ int relayPin = 3;
 RootAPI root;
 
 std::string type = "relay";
-std::string myOSCID = "2";
+// std::string myOSCID = "2";
 bool firstValidConnection = false;
 void setup() {
   // Pour a bowl of serial
   Serial.begin(115200);
 
-  connectivity::setup(type, myOSCID);
-
-  delay(100);
   if (!SPIFFS.begin(true)) {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
@@ -46,6 +43,14 @@ void setup() {
   Serial.println(String(SPIFFS.totalBytes()));
   Serial.print("used bytes");
   Serial.println(String(SPIFFS.usedBytes()));
+
+  std::string hostName = root.getNiceName();
+  if (hostName.size() == 0) {
+    hostName = "defaultNiceName";
+  }
+
+  delay(100);
+  connectivity::setup(type, hostName);
 
   delay(100);
   // esp_now_init();
@@ -59,6 +64,7 @@ void updateStateFromAgenda() {
   bool shouldBeActive = root.scheduleAPI.shouldBeOn();
   Serial.print("agend should be ");
   Serial.println(shouldBeActive ? "on" : "off");
+  root.activate(shouldBeActive);
 }
 
 void fileChanged() {
@@ -87,30 +93,40 @@ void loop() {
       for (int i = 0; i < bundle.size(); i++) {
         bool needAnswer = false;
         auto &msg = *bundle.getOSCMessage(i);
-        DBGMSG("new msg : ");
+        DBGMSG(F("[msg] new msg : "));
         DBGMSGLN(OSCAPI::getAddress(msg).c_str());
         // bundle.getOSCMessage(i)->getAddress(OSCAPI::OSCEndpoint::getBuf());
         // DBGMSGLN(OSCAPI::OSCEndpoint::getBuf());
         auto res = OSCApiParser.processOSC(&root, msg, needAnswer);
+        if (!bool(res)) {
+          Serial.print("!!! message parsing err : ");
+          Serial.println(res.errMsg.c_str());
+        }
 #if 1
         if (needAnswer) {
-          DBGMSGLN("try send resp");
+          DBGMSGLN(F("[msg] try send resp"));
           if (!bool(res)) {
-            DBGMSGLN("invalid res returned from OSCApiParser resp");
+            PRINTLN(F("[msg] invalid res returned from OSCApiParser resp"));
           } else if (!res.res) {
-            DBGMSGLN("no res returned from OSCApiParser resp");
+            PRINTLN(F("[msg]  no res returned from OSCApiParser resp"));
           } else {
             msg.getAddress(OSCAPI::OSCEndpoint::getBuf());
             OSCMessage rmsg(OSCAPI::OSCEndpoint::getBuf());
             if (OSCApiParser.listToOSCMessage(TypedArgList(res.res), rmsg)) {
               connectivity::sendOSCResp(rmsg);
+              DBGOSC((String("sent resp : ") +
+                      String(OSCAPI::OSCEndpoint::getBuf()) + " " +
+                      String(res.toString().c_str()) + " to " +
+                      connectivity::udpRcv.remoteIP().toString() + ":" +
+                      String(connectivity::udpRcv.remotePort()))
+                         .c_str());
             }
           }
-          DBGMSG("res : ");
-          DBGMSGLN(res.toString().c_str());
+          // DBGMSG("res : ");
+          // DBGMSGLN(res.toString().c_str());
         }
 #endif
-        DBGMSGLN("endOSC");
+        DBGMSGLN(F("[msg] end OSC"));
       }
     }
 

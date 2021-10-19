@@ -9,8 +9,6 @@ struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
     rGetSet<bool>(
         "activate", [this]() { return relayOn; },
         [this](const bool &b) {
-          Serial.print("setting relay to  ");
-          Serial.println(b ? "on " : "off");
           setRelayState(b);
         });
   }
@@ -24,6 +22,8 @@ struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
   }
   void setRelayState(bool b) {
     relayOn = b;
+    Serial.print(F("[app] setting relay to  "));
+    Serial.println(b ? "on " : "off");
     for (auto &p : relayPins)
       digitalWrite(p, relayOn);
   }

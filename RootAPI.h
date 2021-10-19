@@ -3,6 +3,7 @@
 #include "ESPRTC.h"
 #include "RelayAPI.h"
 #include "SchedulerAPI.h"
+#include <fstream>
 struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
 
   RelayAPI relayApi;
@@ -16,6 +17,14 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
     // rFunction<std::string, std::string>("getFile", &RootAPI::getFile);
     // rFunction<bool, std::string, std::string>("saveFile",
     // &RootAPI::saveFile); rFunction<std::string>("ls", &RootAPI::ls);
+
+    rGetSet<bool>(
+        "activate", [this]() { return isActivated; },
+        [this](const bool &b) { activate(b); });
+
+    rGetSet<std::string>(
+        "niceName", [this]() { return getNiceName(); },
+        [this](const std::string &s) { setNiceName(s); });
 
     rGetter<int>("rssi", [this](RootAPI &) {
       // Serial.print("getting rssi  ");
@@ -42,6 +51,38 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
     }
     PRINTLN("root is all setup");
     return res;
+  }
+
+  std::string niceName;
+  bool isActivated = false;
+
+  bool activate(bool b) {
+    Serial.print(F("[app] activating to  "));
+    Serial.println(b ? "on " : "off");
+    isActivated = b;
+    relayApi.setRelayState(b);
+  }
+
+  void setNiceName(const std::string &s) const {
+    std::ofstream myfile("/spiffs/nicename.txt");
+    if (myfile.is_open()) {
+      myfile << s << "\n";
+      myfile.close();
+    } else {
+      PRINTLN(F("!!! cant write nicename file"));
+    }
+  }
+
+  std::string getNiceName() const {
+    std::ifstream myfile("/spiffs/nicename.txt");
+    std::string line;
+    if (myfile.is_open()) {
+      getline(myfile, line);
+      myfile.close();
+    } else {
+      PRINTLN(F("!!! cant write nicename file"));
+    }
+    return line;
   }
 
   // void setState(std::string st) { APISerializer::stateToNode(this, st); }
