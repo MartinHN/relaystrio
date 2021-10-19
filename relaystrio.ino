@@ -17,6 +17,8 @@
 #include "./lib/JPI/wrappers/esp/time.hpp"
 
 #include "RootAPI.h"
+
+#include "webServer.h"
 OSCAPI OSCApiParser;
 #include <string>
 
@@ -26,24 +28,58 @@ RootAPI root;
 
 std::string type = "relay";
 std::string myOSCID = "2";
-
+bool firstValidConnection = false;
 void setup() {
   // Pour a bowl of serial
   Serial.begin(115200);
+
   connectivity::setup(type, myOSCID);
 
   delay(100);
-  // esp_now_init();
+  if (!SPIFFS.begin(true)) {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }
 
+  Serial.println("SPIFFS inited");
+  Serial.print("total bytes");
+  Serial.println(String(SPIFFS.totalBytes()));
+  Serial.print("used bytes");
+  Serial.println(String(SPIFFS.usedBytes()));
+
+  delay(100);
+  // esp_now_init();
   if (!root.setup()) {
     PRINTLN("error while setting up root");
   }
+  root.rtc.onTimeChange = onTimeChange;
+}
+
+void updateStateFromAgenda() {
+  bool shouldBeActive = root.scheduleAPI.shouldBeOn();
+  Serial.print("agend should be ");
+  Serial.println(shouldBeActive ? "on" : "off");
+}
+
+void fileChanged() {
+  Serial.println("file change cb");
+  root.scheduleAPI.loadFromFileSystem();
+  updateStateFromAgenda();
+}
+
+void onTimeChange() {
+  Serial.println("time change cb");
+  updateStateFromAgenda();
 }
 
 void loop() {
   // auto t = millis();
 
   if (connectivity::handleConnection()) {
+    if (!firstValidConnection) {
+      initWebServer(fileChanged);
+      firstValidConnection = true;
+    }
     // PRINTLN(">>>>loop ok");
     OSCBundle bundle;
     if (connectivity::receiveOSC(bundle)) {

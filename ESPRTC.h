@@ -14,6 +14,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
 
   // TwoWire wire;
   RtcDS1307<TwoWire> rtc;
+  std::function<void()> onTimeChange;
   ESPRTC() : APIAndInstance<ESPRTC>(this), rtc(Wire) {
     // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
@@ -98,10 +99,12 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
       return false;
     }
     setLocalTimeUTC(epoch);
+
     return true;
   }
 
   void setRTCTime(time_t epochTime) {
+    setLocalTimeUTC(epochTime);
     if (!rtc.GetIsRunning()) {
       PRINTLN("rtc not running");
       return;
@@ -116,6 +119,8 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
   void setLocalTimeUTC(time_t epoch) {
     struct timeval tv = {epoch, 0};
     settimeofday(&tv, NULL);
+    if (onTimeChange)
+      onTimeChange();
   }
 
   // sntp_sync_time_cb_t
