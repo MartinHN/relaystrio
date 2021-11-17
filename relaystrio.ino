@@ -60,20 +60,20 @@ void setup() {
   root.rtc.onTimeChange = onTimeChange;
 }
 
-void updateStateFromAgenda() {
+static void updateStateFromAgenda() {
   bool shouldBeActive = root.scheduleAPI.shouldBeOn();
   Serial.print("agend should be ");
   Serial.println(shouldBeActive ? "on" : "off");
   root.activate(shouldBeActive);
 }
 
-void fileChanged() {
+static void fileChanged() {
   Serial.println("file change cb");
   root.scheduleAPI.loadFromFileSystem();
   updateStateFromAgenda();
 }
 
-void onTimeChange() {
+static void onTimeChange() {
   Serial.println("time change cb");
   updateStateFromAgenda();
 }
@@ -129,6 +129,8 @@ void loop() {
         DBGMSGLN(F("[msg] end OSC"));
       }
     }
+    yield();
+    delay(10);
 
   } else {
     delay(10);
