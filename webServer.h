@@ -45,7 +45,7 @@ AsyncWebServer server(webPort);
 //   //   }
 // }
 
-typedef std::function<void()> FileChangeCB;
+typedef std::function<void(const String &name)> FileChangeCB;
 FileChangeCB fileChangeCB;
 ArBodyHandlerFunction SPIFFSSetter(const String &filename) {
   return [filename](AsyncWebServerRequest *request, uint8_t *data, size_t len,
@@ -75,7 +75,7 @@ ArBodyHandlerFunction SPIFFSSetter(const String &filename) {
         Serial.printf("BodyEnd: %u B\n", total);
         request->_tempFile.close();
         if (fileChangeCB)
-          fileChangeCB();
+          fileChangeCB(filename);
       }
     } else {
       Serial.println("can not get temp file");
@@ -100,6 +100,20 @@ void initWebServer(FileChangeCB cb) {
         request->send(200);
       },
       nullptr, SPIFFSSetter("/agenda.json"));
+
+  server.on("/niceName", HTTP_GET, [](AsyncWebServerRequest *request) {
+    Serial.println("getting niceName.txt");
+    request->send(SPIFFS, "/niceName.txt", "text/plain");
+  });
+
+  //   // POST
+  server.on(
+      "/post/niceName", HTTP_POST,
+      [](AsyncWebServerRequest *request) {
+        Serial.println("got niceName req");
+        request->send(200);
+      },
+      nullptr, SPIFFSSetter("/niceName.txt"));
 
   //   server.onRequestBody(onMyBody);
   server.begin();

@@ -62,13 +62,14 @@ void setup() {
 
 static void updateStateFromAgenda() {
   bool shouldBeActive = root.scheduleAPI.shouldBeOn();
-  Serial.print("agend should be ");
+  Serial.print("agenda should be ");
   Serial.println(shouldBeActive ? "on" : "off");
   root.activate(shouldBeActive);
 }
 
-static void fileChanged() {
-  Serial.println("file change cb");
+static void fileChanged(const String &filename) {
+  Serial.print("file change cb");
+  Serial.println(filename);
   root.scheduleAPI.loadFromFileSystem();
   updateStateFromAgenda();
 }
