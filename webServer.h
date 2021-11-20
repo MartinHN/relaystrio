@@ -1,3 +1,4 @@
+#include "./lib/JPI/wrappers/esp/TimeHelpers.hpp"
 #include "./lib/JPI/wrappers/esp/connectivity.hpp"
 #include "AsyncTCP.h"
 #include "ESPAsyncWebServer.h"
@@ -87,34 +88,74 @@ void initWebServer(FileChangeCB cb) {
   Serial.print("server listening on ");
   Serial.println(webPort);
   // Send a GET request to <IP>/get?message=<message>
-  server.on("/agendaFile", HTTP_GET, [](AsyncWebServerRequest *request) {
+  // agendaFile
+  server.on("/agendaFile", HTTP_GET, [](AsyncWebServerRequest *req) {
     Serial.println("getting agenda.json");
-    request->send(SPIFFS, "/agenda.json", "text/plain");
+    req->send(SPIFFS, "/agenda.json", "text/plain");
   });
-
-  //   // POST
   server.on(
       "/post/agendaFile", HTTP_POST,
-      [](AsyncWebServerRequest *request) {
+      [](AsyncWebServerRequest *req) {
         Serial.println("got agenda req");
-        request->send(200);
+        req->send(200);
       },
       nullptr, SPIFFSSetter("/agenda.json"));
 
-  server.on("/niceName", HTTP_GET, [](AsyncWebServerRequest *request) {
+  // niceName
+  server.on("/niceName", HTTP_GET, [](AsyncWebServerRequest *req) {
     Serial.println("getting niceName.txt");
-    request->send(SPIFFS, "/niceName.txt", "text/plain");
+    req->send(SPIFFS, "/niceName.txt", "text/plain");
   });
 
   //   // POST
   server.on(
       "/post/niceName", HTTP_POST,
-      [](AsyncWebServerRequest *request) {
+      [](AsyncWebServerRequest *req) {
         Serial.println("got niceName req");
-        request->send(200);
+        req->send(200);
       },
       nullptr, SPIFFSSetter("/niceName.txt"));
 
+  // time
+
+  server.on("/time", HTTP_GET, [](AsyncWebServerRequest *req) {
+    // struct tm timeinfo;
+    time_t epoch(time(nullptr));
+
+    tm *local = localtime(&epoch);
+    String localS(asctime(local));
+    localS.trim();
+    tm *utc = gmtime(&epoch);
+    String utcS(asctime(utc));
+    utcS.trim();
+    // if (!getLocalTime(&timeinfo)) {
+    //   PRINT("no time found stuck at :");
+    //   PRINTLN(asctime(&timeinfo));
+    //   return req->send(404);
+    // }
+    String timeStr = "{\n";
+    timeStr += "\"localTime\":\"" + localS + "\"";
+    timeStr += ",\n";
+    timeStr += "\"utcTime\":\"" + utcS + "\"";
+    timeStr += "\n}";
+    Serial.print("getting time : ");
+    Serial.println(timeStr);
+    req->send(200, "application/json", timeStr);
+  });
+
+  // CORS Bullshit
+  server.onNotFound([](AsyncWebServerRequest *request) {
+    if (request->method() == HTTP_OPTIONS) {
+      request->send(200);
+    } else {
+      request->send(404);
+    }
+  });
   //   server.onRequestBody(onMyBody);
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+  DefaultHeaders::Instance().addHeader(
+      "Access-Control-Allow-Method", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Header",
+                                       "Origin, Content-Type, X-Auth-Token");
   server.begin();
 }

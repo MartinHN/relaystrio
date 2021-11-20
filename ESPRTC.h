@@ -1,6 +1,6 @@
 #pragma once
 #include "./lib/JPI/src/API.hpp"
-#include "time.h"
+#include "./lib/JPI/wrappers/esp/TimeHelpers.hpp"
 #include <RtcDS1307.h>
 
 #define TIME_TESTS 1
@@ -84,7 +84,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
 
   bool syncLocalToRTC() {
     time_t epoch;
-    if (!getLocalTimeUTC(&epoch)) {
+    if (!Helpers::getLocalTimeUTC(&epoch)) {
       PRINTLN("can't get local utc time");
       return false;
     }
@@ -138,18 +138,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
     // if(sntp_enabled()){sntp_stop();}
   }
 
-  // epoch  time getters
-  bool getLocalTimeUTC(time_t *epoch) {
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo)) {
-      PRINT("no time found stuck at :");
-      PRINTLN(asctime(&timeinfo));
-      return false;
-    }
-    time(epoch);
 
-    return true;
-  }
 
   bool getRTCTimeUTC(time_t *epoch) {
     if (!rtc.GetIsRunning())
@@ -187,14 +176,6 @@ for auto ntp disocvery : check LWIP_DHCP_GET_NTP_SRV
 (SNTP_GET_SERVERS_FROM_DHCP)
 
 */
-// static void printLocalTime() {
-//   struct tm timeinfo;
-//   if (!getLocalTime(&timeinfo)) {
-//     PRINTLN("Failed to obtain time");
-//     return;
-//   }
-//   Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
-// }
 
 // static tm rtctoTm(const RtcDateTime &dt, bool hadDst = false) {
 //   tm tinfo{
