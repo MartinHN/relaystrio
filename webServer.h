@@ -101,20 +101,33 @@ void initWebServer(FileChangeCB cb) {
       },
       nullptr, SPIFFSSetter("/agenda.json"));
 
-  // niceName
-  server.on("/niceName", HTTP_GET, [](AsyncWebServerRequest *req) {
-    Serial.println("getting niceName.txt");
-    req->send(SPIFFS, "/niceName.txt", "text/plain");
+  // info
+  server.on("/info", HTTP_GET, [](AsyncWebServerRequest *req) {
+    Serial.println("getting agenda.json");
+    req->send(SPIFFS, "/info.json", "application/json");
   });
-
-  //   // POST
   server.on(
-      "/post/niceName", HTTP_POST,
+      "/post/info", HTTP_POST,
       [](AsyncWebServerRequest *req) {
-        Serial.println("got niceName req");
+        Serial.println("got info req");
         req->send(200);
       },
-      nullptr, SPIFFSSetter("/niceName.txt"));
+      nullptr, SPIFFSSetter("/info.json"));
+
+  // // niceName
+  // server.on("/niceName", HTTP_GET, [](AsyncWebServerRequest *req) {
+  //   Serial.println("getting niceName.txt");
+  //   req->send(SPIFFS, "/niceName.txt", "text/plain");
+  // });
+
+  // //   // POST
+  // server.on(
+  //     "/post/niceName", HTTP_POST,
+  //     [](AsyncWebServerRequest *req) {
+  //       Serial.println("got niceName req");
+  //       req->send(200);
+  //     },
+  //     nullptr, SPIFFSSetter("/niceName.txt"));
 
   // time
 

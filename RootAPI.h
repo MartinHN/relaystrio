@@ -23,8 +23,8 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
         [this](const bool &b) { activate(b); });
 
     rGetSet<std::string>(
-        "niceName", [this]() { return getNiceName(); },
-        [this](const std::string &s) { setNiceName(s); });
+        "hostName", [this]() { return getHostName(); },
+        [this](const std::string &s) { setHostName(s); });
 
     rGetter<int>("rssi", [this](RootAPI &) {
       // Serial.print("getting rssi  ");
@@ -63,32 +63,37 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
     relayApi.setRelayState(b);
   }
 
-  void setNiceName(const std::string &s) const {
-    std::ofstream myfile("/spiffs/nicename.txt");
+  // TODO get nicename from info.json
+
+  void setHostName(const std::string &s) const {
+    std::ofstream myfile("/spiffs/hostname.txt");
     if (myfile.is_open()) {
       myfile << s << "\n";
       myfile.close();
     } else {
-      PRINTLN(F("!!! cant write nicename file"));
+      PRINTLN(F("!!! cant write hostname file"));
     }
   }
 
-  std::string getNiceName() const {
-    std::ifstream myfile("/spiffs/nicename.txt");
+  std::string getHostName() const {
+    std::ifstream myfile("/spiffs/hostname.txt");
     std::string line;
     if (myfile.is_open()) {
       getline(myfile, line);
       myfile.close();
     } else {
-      PRINTLN(F("!!! cant write nicename file"));
+      PRINTLN(F("!!! cant write hostname file"));
     }
     return line;
   }
 
-  // void setState(std::string st) { APISerializer::stateToNode(this, st); }
-  // std::string getState() { return APISerializer::stateFromNode(this); }
+  void g
 
-  void reboot() {
+      // void setState(std::string st) { APISerializer::stateToNode(this, st); }
+      // std::string getState() { return APISerializer::stateFromNode(this); }
+
+      void
+      reboot() {
     delay(1000);
     ESP.restart();
   }

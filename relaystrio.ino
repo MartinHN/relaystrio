@@ -44,7 +44,7 @@ void setup() {
   Serial.print("used bytes");
   Serial.println(String(SPIFFS.usedBytes()));
 
-  std::string hostName = root.getNiceName();
+  std::string hostName = root.getHostName();
   if (hostName.size() == 0) {
     hostName = "defaultNiceName";
   }
