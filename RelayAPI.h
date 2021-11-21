@@ -4,7 +4,7 @@
 struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
 
   bool relayOn = false;
-  const std::vector<int> relayPins = {15}; // add pins here
+  const std::vector<int> relayPins = {27, 26, 25, 33, 32}; // add pins here
   RelayAPI() : APIAndInstance<RelayAPI>(this) {
     rGetSet<bool>(
         "activate", [this]() { return relayOn; },

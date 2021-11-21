@@ -79,5 +79,6 @@
     ],
     "search.exclude": {
         "build/**": true
-    }
+    },
+    "arduino.logLevel": "verbose"
 }

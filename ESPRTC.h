@@ -31,6 +31,24 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
 
     rtc.Begin(); // add i2c pin if needed
     delay(20);
+    if (!rtc.GetIsRunning()) {
+      PRINTLN("[rtc] force RTC to start");
+      rtc.SetIsRunning(true);
+    }
+    if (!rtc.GetIsRunning()) {
+      PRINTLN("[rtc] ERROR : rtc not connected  err =" + rtc.LastError());
+    } else {
+      time_t epoch;
+      getRTCTimeUTC(&epoch);
+      tm *local = localtime(&epoch);
+      String localS(asctime(local));
+      localS.trim();
+      tm *utc = gmtime(&epoch);
+      String utcS(asctime(utc));
+      utcS.trim();
+      PRINT("[rtc] Connected with time : ");
+      PRINTLN(localS + " :: (utc)" + utcS);
+    }
     syncRTCToLocal();
     // printLocalTime();
 
@@ -38,7 +56,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
 
 #if TIME_TESTS
     {
-      // PRINTLN(">>>>>>>>>>>start auto test");
+      // PRINTLN("[rtc] >>>>>>>>>>>start auto test");
       // tm compile_time{
       //     0,          //       int	tm_sec;
       //     0,          //   int	tm_min;
@@ -64,19 +82,19 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
       // yield();
       // delay(100);
       // if (!getLocalTimeUTC(&epoch)) {
-      //   PRINTLN("can't get first local utc time");
+      //   PRINTLN("[rtc] can't get first local utc time");
       // }
       // yield();
       // delay(3000);
       // time_t nepoch;
       // if (!getLocalTimeUTC(&nepoch)) {
-      //   PRINTLN("can't get second local utc time");
+      //   PRINTLN("[rtc] can't get second local utc time");
       // }
 
       // PRINT("time diff  :  ");
       // PRINTLN(std::to_string(nepoch - epoch).c_str());
 
-      // PRINTLN(">>>>>>>>>end auto test");
+      // PRINTLN("[rtc] >>>>>>>>>end auto test");
     }
 #endif
     return true;
@@ -85,7 +103,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
   bool syncLocalToRTC() {
     time_t epoch;
     if (!Helpers::getLocalTimeUTC(&epoch)) {
-      PRINTLN("can't get local utc time");
+      PRINTLN("[rtc] can't get local utc time");
       return false;
     }
     setRTCTime(epoch);
@@ -95,7 +113,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
   bool syncRTCToLocal() {
     time_t epoch;
     if (!getRTCTimeUTC(&epoch)) {
-      PRINTLN("can't get rtc utc time");
+      PRINTLN("[rtc] can't get rtc utc time");
       return false;
     }
     setLocalTimeUTC(epoch);
@@ -106,7 +124,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
   void setRTCTime(time_t epochTime) {
     setLocalTimeUTC(epochTime);
     if (!rtc.GetIsRunning()) {
-      PRINTLN("rtc not running");
+      PRINTLN("[rtc] rtc not running, not setting time");
       return;
     }
     RTCIsUpdating = true;
@@ -114,6 +132,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
     dt.InitWithEpoch64Time(epochTime);
     rtc.SetDateTime(dt);
     RTCIsUpdating = false;
+    PRINTLN("[rtc] rtc time has been updated");
   }
 
   void setLocalTimeUTC(time_t epoch) {
@@ -127,10 +146,10 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
 
   void ntpSyncCb(timeval *tv) {
     if (RTCIsUpdating) {
-      PRINTLN("setting from rtc?");
+      PRINTLN("[rtc] setting from rtc?");
       return;
     }
-    PRINTLN("got ntp update");
+    PRINTLN("[rtc] got ntp update");
 
     setRTCTime(tv->tv_sec); // time_t
 
@@ -154,7 +173,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
     static ESPRTC *inst = nullptr;
     if (set) {
       if (inst != nullptr)
-        PRINTLN("Ooo double initialization = double time??? OhOoooH");
+        PRINTLN("[rtc] Ooo double initialization = double time??? OhOoooH");
       inst = set;
     }
     return inst;
@@ -164,7 +183,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
     if (auto i = instance())
       i->ntpSyncCb(tv);
     else
-      PRINTLN("time changed before instanciaition of RTC");
+      PRINTLN("[rtc] time changed before instanciaition of RTC");
   }
 
   bool RTCIsUpdating = false;

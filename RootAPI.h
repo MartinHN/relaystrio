@@ -82,19 +82,18 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
       getline(myfile, line);
       myfile.close();
     } else {
-      PRINTLN(F("!!! cant write hostname file"));
+      PRINTLN(F("!!! cant read hostname file"));
     }
     return line;
   }
 
-  void g
 
       // void setState(std::string st) { APISerializer::stateToNode(this, st); }
       // std::string getState() { return APISerializer::stateFromNode(this); }
 
       void
       reboot() {
-    delay(1000);
-    ESP.restart();
+        delay(1000);
+        ESP.restart();
   }
 };

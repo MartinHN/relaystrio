@@ -1,5 +1,11 @@
 #include <Arduino.h>
 
+#define OTA 1
+
+#if OTA
+#include <ArduinoOTA.h>
+#endif
+
 #define DBG_MSG 1
 
 #if DBG_MSG
@@ -46,18 +52,46 @@ void setup() {
 
   std::string hostName = root.getHostName();
   if (hostName.size() == 0) {
-    hostName = "defaultNiceName";
+    char tmp[20];
+    uint8_t mac[6];
+    WiFi.macAddress(mac);
+    sprintf(tmp, "esp32-%02x%02x%02x%02x%02x%02x", mac[0], mac[1], mac[2],
+            mac[3], mac[4], mac[5]);
+    hostName = tmp;
   }
 
-  delay(100);
+#if OTA
+  ArduinoOTA.setHostname(hostName.c_str());
+  ArduinoOTA.onStart([]() { Serial.println("[ota] Start"); });
+  ArduinoOTA.onEnd([]() { Serial.println("[ota] \nEnd"); });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("%u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("[ota] Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR)
+      Serial.println("[ota] Auth Failed");
+    else if (error == OTA_BEGIN_ERROR)
+      Serial.println("[ota] Begin Failed");
+    else if (error == OTA_CONNECT_ERROR)
+      Serial.println("[ota] Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR)
+      Serial.println("[ota] Receive Failed");
+    else if (error == OTA_END_ERROR)
+      Serial.println("[ota] End Failed");
+  });
+#endif
+  // delay(100);
   connectivity::setup(type, hostName);
 
-  delay(100);
+  // delay(100);
   // esp_now_init();
   if (!root.setup()) {
     PRINTLN("error while setting up root");
   }
   root.rtc.onTimeChange = onTimeChange;
+
+  updateStateFromAgenda();
 }
 
 static void updateStateFromAgenda() {
@@ -65,6 +99,9 @@ static void updateStateFromAgenda() {
   Serial.print("agenda should be ");
   Serial.println(shouldBeActive ? "on" : "off");
   root.activate(shouldBeActive);
+  // OSCMessage amsg("/activate");
+  // amsg.add<int>(shouldBeActive ? 1 : 0);
+  // connectivity::sendOSCResp(amsg);
 }
 
 static void fileChanged(const String &filename) {
@@ -85,8 +122,14 @@ void loop() {
   if (connectivity::handleConnection()) {
     if (!firstValidConnection) {
       initWebServer(fileChanged);
+#if OTA
+      ArduinoOTA.begin();
+#endif
       firstValidConnection = true;
     }
+#if OTA
+    ArduinoOTA.handle();
+#endif
     // PRINTLN(">>>>loop ok");
     OSCBundle bundle;
     if (connectivity::receiveOSC(bundle)) {
