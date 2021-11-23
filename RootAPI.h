@@ -53,6 +53,14 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
     return res;
   }
 
+  void handle() override {
+    for (auto c : childNodes) {
+      // PRINT("handle up ");
+      // PRINTLN(c->idInParent.c_str());
+      c->handle();
+    }
+  }
+
   std::string niceName;
   bool isActivated = false;
 
@@ -87,13 +95,11 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
     return line;
   }
 
+  // void setState(std::string st) { APISerializer::stateToNode(this, st); }
+  // std::string getState() { return APISerializer::stateFromNode(this); }
 
-      // void setState(std::string st) { APISerializer::stateToNode(this, st); }
-      // std::string getState() { return APISerializer::stateFromNode(this); }
-
-      void
-      reboot() {
-        delay(1000);
-        ESP.restart();
+  void reboot() {
+    delay(1000);
+    ESP.restart();
   }
 };

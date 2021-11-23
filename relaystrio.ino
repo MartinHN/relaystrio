@@ -118,7 +118,7 @@ static void onTimeChange() {
 
 void loop() {
   // auto t = millis();
-
+  root.handle();
   if (connectivity::handleConnection()) {
     if (!firstValidConnection) {
       initWebServer(fileChanged);
@@ -130,6 +130,7 @@ void loop() {
 #if OTA
     ArduinoOTA.handle();
 #endif
+
     // PRINTLN(">>>>loop ok");
     OSCBundle bundle;
     if (connectivity::receiveOSC(bundle)) {
@@ -174,9 +175,10 @@ void loop() {
       }
     }
     yield();
-    delay(10);
+    // delay(10);
 
   } else {
-    delay(10);
+    yield();
+    // delay(10);
   }
 }
