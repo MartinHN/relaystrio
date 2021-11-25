@@ -68,13 +68,16 @@ struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
 
   void setRelayState(bool b) {
     relayOn = b;
-    lastActMs = millis();
-    prevActIdx = -1;
+
     Serial.print(F("[app] setting relay to  "));
     Serial.print(lastActMs);
     Serial.println(b ? "on " : "off");
-    if (pinDelayMs == 0)
+    if (pinDelayMs == 0) {
       for (auto &p : relayPins)
         digitalWrite(p, relayOn);
+    } else {
+      prevActIdx = -1;
+      lastActMs = millis();
+    }
   }
 };
