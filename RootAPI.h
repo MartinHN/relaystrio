@@ -32,6 +32,8 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
       return (int)WiFi.RSSI();
     });
 
+    rFunction<void, std::string>("setTimeStr", &RootAPI::setTimeStr);
+
     rTrig("reboot", &RootAPI::reboot);
 
     // childs
@@ -65,11 +67,15 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
   bool isActivated = false;
 
   bool activate(bool b) {
-    Serial.print(F("[app] activating to  "));
-    Serial.println(b ? "on " : "off");
+    if (isActivated != b) {
+      Serial.print(F("[app] activating to  "));
+      Serial.println(b ? "on " : "off");
+    }
     isActivated = b;
     relayApi.setRelayState(b);
   }
+
+  void setTimeStr(std::string s) { rtc.setTimeStr(s); }
 
   // TODO get nicename from info.json
 

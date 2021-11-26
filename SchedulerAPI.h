@@ -7,7 +7,7 @@
 #include <cereal/types/map.hpp>
 #include <cereal/types/vector.hpp>
 
-#define DBG_SCH 1
+#define DBG_SCH 0
 
 #if DBG_SCH
 #define DBGSCH(x) PRINT(x)

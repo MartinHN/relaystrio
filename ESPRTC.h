@@ -100,6 +100,15 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
     return true;
   }
 
+  void setTimeStr(std::string s) {
+    tm tm;
+    Serial.print("manually setting time to ");
+    Serial.println(s.c_str());
+    strptime(s.c_str(), "%d/%m/%Y %H:%M:%S", &tm);
+    auto time = mktime(&tm);
+    setRTCTime(time);
+  }
+
   bool syncLocalToRTC() {
     time_t epoch;
     if (!Helpers::getLocalTimeUTC(&epoch)) {

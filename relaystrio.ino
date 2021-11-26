@@ -33,6 +33,9 @@ int relayPin = 3;
 RootAPI root;
 
 std::string type = "relay";
+
+int checkAgendaTime = 1000;
+unsigned long long lastCheckAgendaTime = 0;
 // std::string myOSCID = "2";
 bool firstValidConnection = false;
 void setup() {
@@ -91,13 +94,15 @@ void setup() {
   }
   root.rtc.onTimeChange = onTimeChange;
 
-  updateStateFromAgenda();
+  updateStateFromAgenda(false);
 }
 
-static void updateStateFromAgenda() {
+static void updateStateFromAgenda(bool quiet) {
   bool shouldBeActive = root.scheduleAPI.shouldBeOn();
-  Serial.print("agenda should be ");
-  Serial.println(shouldBeActive ? "on" : "off");
+  if (!quiet) {
+    Serial.print("agenda should be ");
+    Serial.println(shouldBeActive ? "on" : "off");
+  }
   root.activate(shouldBeActive);
   // OSCMessage amsg("/activate");
   // amsg.add<int>(shouldBeActive ? 1 : 0);
@@ -108,16 +113,20 @@ static void fileChanged(const String &filename) {
   Serial.print("file change cb");
   Serial.println(filename);
   root.scheduleAPI.loadFromFileSystem();
-  updateStateFromAgenda();
+  updateStateFromAgenda(false);
 }
 
 static void onTimeChange() {
   Serial.println("time change cb");
-  updateStateFromAgenda();
+  updateStateFromAgenda(false);
 }
 
 void loop() {
-  // auto t = millis();
+  auto t = millis();
+  if ((t - lastCheckAgendaTime) > checkAgendaTime) {
+    updateStateFromAgenda(true);
+    lastCheckAgendaTime = t;
+  }
   root.handle();
   if (connectivity::handleConnection()) {
     if (!firstValidConnection) {

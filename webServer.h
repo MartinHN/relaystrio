@@ -83,6 +83,7 @@ ArBodyHandlerFunction SPIFFSSetter(const String &filename) {
     }
   };
 }
+
 void initWebServer(FileChangeCB cb) {
   fileChangeCB = cb;
   Serial.print("server listening on ");
