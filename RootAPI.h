@@ -9,6 +9,7 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
   RelayAPI relayApi;
   SchedulerAPI scheduleAPI;
   ESPRTC rtc;
+  bool isAgendaDisabled = false;
   RootAPI() : APIAndInstance<RootAPI>(this), MapNode() {
 
     // rFunction<std::string>("getState", &RootAPI::getState);
@@ -33,6 +34,7 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
     });
 
     rFunction<void, std::string>("setTimeStr", &RootAPI::setTimeStr);
+    rFunction<void, bool>("isAgendaDisabled", &RootAPI::setAgendaDisabled);
 
     rTrig("reboot", &RootAPI::reboot);
 
@@ -77,6 +79,22 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
 
   void setTimeStr(std::string s) { rtc.setTimeStr(s); }
 
+  void setAgendaDisabled(bool b) {
+    Serial.print("Agenda is ");
+    Serial.println(b ? "disabled" : "enabled");
+    isAgendaDisabled = b;
+    // else if(msg.address === "/isAgendaDisabled"){
+    //   if(msg.args.length === 1){
+    //     const a  = msg.args[0]
+
+    //     isAgendaDisabled = a!=="0" && !!a
+    //     console.log("isAgendaDisabled = ",isAgendaDisabled)
+    //     if(!isAgendaDisabled){
+    //       activate(!!getAgendaShouldActivate())
+    //     }
+    //   }
+    //   }
+  }
   // TODO get nicename from info.json
 
   void setHostName(const std::string &s) const {

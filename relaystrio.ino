@@ -98,10 +98,13 @@ void setup() {
 }
 
 static void updateStateFromAgenda(bool quiet) {
+  if (root.isAgendaDisabled) {
+    return;
+  }
   bool shouldBeActive = root.scheduleAPI.shouldBeOn();
-  if (!quiet) {
-    Serial.print("agenda should be ");
-    Serial.println(shouldBeActive ? "on" : "off");
+  // if (!quiet) {
+  Serial.print("agenda should be ");
+  Serial.println(shouldBeActive ? "on" : "off");
   }
   root.activate(shouldBeActive);
   // OSCMessage amsg("/activate");
@@ -123,8 +126,8 @@ static void onTimeChange() {
 
 void loop() {
   auto t = millis();
-  if ((t - lastCheckAgendaTime) > checkAgendaTime) {
-    updateStateFromAgenda(true);
+  if (((t - lastCheckAgendaTime) > checkAgendaTime)) {
+    updateStateFromAgenda(false);
     lastCheckAgendaTime = t;
   }
   root.handle();
