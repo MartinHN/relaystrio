@@ -5,3 +5,11 @@ Compile It
 ##
 make sure you use vscode/ Arduino ext and modify iclude path in .vscode/arduino.json
 if not using vscode it should be easy to put the flags in platform.local.txt
+
+
+Arduino Libs
+
+OSC from freed
+Makuna/RTC
+me-noDev/AsyncTCP (manual install)
+me-noDev/ESPAsyncWebServer
