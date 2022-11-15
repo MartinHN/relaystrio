@@ -53,11 +53,14 @@ ArBodyHandlerFunction SPIFFSSetter(const String &filename) {
                     size_t index, size_t total) {
     Serial.println("got body cb");
     Serial.print("len ");
-    Serial.println(String(len));
+    auto lS = String(len);
+    Serial.println(lS);
     Serial.print("index ");
-    Serial.println(String(index));
+    auto iS = String(index);
+    Serial.println(iS);
     Serial.print("total ");
-    Serial.println(String(total));
+    auto tS = String(total);
+    Serial.println(tS);
 
     if (!index) {
       Serial.printf("BodyStart: %u B\n", total);
