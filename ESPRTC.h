@@ -1,6 +1,7 @@
 #pragma once
 #include "./lib/JPI/src/API.hpp"
 #include "./lib/JPI/wrappers/esp/TimeHelpers.hpp"
+#include "sntp.h"
 #include <RtcDS1307.h>
 
 #define TIME_TESTS 1
@@ -165,8 +166,6 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
     // we may want to stop ntp here
     // if(sntp_enabled()){sntp_stop();}
   }
-
-
 
   bool getRTCTimeUTC(time_t *epoch) {
     if (!rtc.GetIsRunning())
