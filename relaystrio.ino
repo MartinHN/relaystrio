@@ -148,17 +148,17 @@ void setup() {
   updateStateFromAgenda(false);
 }
 
-static void updateStateFromAgenda(bool quiet) {
+void updateStateFromAgenda(bool quiet) {
   if (root.isAgendaDisabled) {
     return;
   }
   bool shouldBeActive = root.scheduleAPI.shouldBeOn();
   // if (!quiet) {
-  Serial.print(F("agenda should be "));
-  if (shouldBeActive)
-    Serial.println(F("on "));
-  else
-    Serial.println(F("off"));
+  // Serial.print(F("agenda should be "));
+  // if (shouldBeActive)
+  //   Serial.println(F("on "));
+  // else
+  //   Serial.println(F("off"));
   // }
   root.activate(shouldBeActive);
   // OSCMessage amsg("/activate");
@@ -166,14 +166,14 @@ static void updateStateFromAgenda(bool quiet) {
   // connectivity::sendOSCResp(amsg);
 }
 
-static void fileChanged(const String &filename) {
+void fileChanged(const String &filename) {
   Serial.print("file change cb");
   Serial.println(filename);
   root.scheduleAPI.loadFromFileSystem();
   updateStateFromAgenda(false);
 }
 
-static void onTimeChange() {
+void onTimeChange() {
   Serial.println("time change cb");
   updateStateFromAgenda(false);
 }
@@ -183,6 +183,7 @@ unsigned long long lastCheckTest = 0;
 int checkTestTime = 80;
 void loop() {
   auto t = millis();
+  Serial.flush();
 #ifndef DISABLE_AGENDA
   if (((t - lastCheckAgendaTime) > checkAgendaTime)) {
     updateStateFromAgenda(false);

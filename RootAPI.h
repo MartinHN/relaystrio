@@ -70,19 +70,30 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
     }
   }
 
-  std::string niceName;
+  std::string niceName = "";
   bool isActivated = false;
 
   bool activate(bool b) {
-    if (isActivated != b) {
-      Serial.print(F("[app] activating to  "));
-      if (b)
-        Serial.println(F("on  "));
-      else
-        Serial.println(F("off "));
+    try {
+      if (isActivated != b) {
+        isActivated = b;
+
+        Serial.print(F("[app] activating to  "));
+        if (b)
+          Serial.println("on  ");
+        else
+          Serial.println("off ");
+        relayApi.setRelayState(b);
+      }
+
+    } catch (...) {
+      std::exception_ptr e = std::current_exception();
+      Serial.println(F("!!!!! error while activating"));
+      if (e)
+        Serial.println(e.__cxa_exception_type()->name());
+      return false;
     }
-    isActivated = b;
-    relayApi.setRelayState(b);
+    return true;
   }
 
   void setTimeStr(std::string s) {
@@ -124,11 +135,12 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
 
   std::string getHostName() const {
     std::ifstream myfile("/spiffs/hostname.txt");
-    std::string line;
+    std::string line = {};
     if (myfile.is_open()) {
       getline(myfile, line);
       myfile.close();
     } else {
+      myfile.close();
       PRINTLN(F("!!! cant read hostname file"));
     }
     return line;

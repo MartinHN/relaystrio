@@ -90,7 +90,7 @@ struct MyHour {
 };
 
 template <class Archive> void load(Archive &ar, MyHour &ms) {
-  std::string s_temp;
+  std::string s_temp = {};
   ar(s_temp);
   ms.fromString(s_temp);
 }
@@ -149,7 +149,7 @@ struct MyDay {
 };
 
 template <class Archive> void load(Archive &ar, MyDay &ms) {
-  std::string s_temp;
+  std::string s_temp = {};
   ar(s_temp);
   ms.fromString(s_temp);
 }
@@ -187,8 +187,8 @@ struct HourRange {
 };
 
 struct DayType {
-  std::string dayName;
-  std::vector<HourRange> hourRangeList;
+  std::string dayName = {};
+  std::vector<HourRange> hourRangeList = {};
   template <class AR> void serialize(AR &ar) {
     ar(CEREAL_NVP(dayName), CEREAL_NVP(hourRangeList));
   }
@@ -261,16 +261,16 @@ struct DayPeriod {
   }
 };
 struct AgendaException {
-  std::string name;
-  DayPeriod dates;
-  DayType dayValue;
+  std::string name = {};
+  DayPeriod dates = {};
+  DayType dayValue = {};
   template <class AR> void serialize(AR &ar) {
     ar(CEREAL_NVP(name), CEREAL_NVP(dates), CEREAL_NVP(dayValue));
   }
   bool includeLocalTime(const tm &t) const { return dates.includeLocalTime(t); }
 };
 struct Agenda {
-  std::string name;
+  std::string name = {};
   WeekType defaultWeek;
   std::vector<AgendaException> agendaExceptionList;
   template <class AR> void serialize(AR &ar) {
@@ -332,14 +332,27 @@ struct SchedulerAPI : public APIAndInstance<SchedulerAPI>, LeafNode {
 
     std::ifstream fileToRead("/spiffs/agenda.json");
     // ifstream file( "example.txt", ios::binary | ios::ate);
+    auto size = fileSize("/spiffs/agenda.json");
+    // if (size == 0) {
+    //   Serial.println("agenda file is empty");
+    //   return false;
+    // }
     DBGSCH("file has size : ");
-    DBGSCHLN(String(fileSize("/spiffs/agenda.json")));
+    DBGSCHLN(String(size));
     try {
       cereal::JSONInputArchive archive(fileToRead);
       agenda.serialize(archive);
-    } catch (cereal::Exception e) {
-      Serial.println("!!!!! error while loading agenda");
+    } catch (const cereal::Exception &e) {
+      Serial.println(F("!!!!! error while loading agenda"));
       Serial.println(e.what());
+      agenda = {};
+      return false;
+    } catch (...) {
+      std::exception_ptr e = std::current_exception();
+      Serial.println(F("!!!!! STD error while loading agenda"));
+      if (e)
+        Serial.println(e.__cxa_exception_type()->name());
+
       return false;
     }
     DBGSCHLN(">>>> agenda file is deserialized");
