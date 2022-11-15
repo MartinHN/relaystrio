@@ -3,7 +3,11 @@
 
 struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
   static constexpr int pinDelayMs = 0;
+  static constexpr int debounceTime = pinDelayMs == 0 ? 100 : pinDelayMs;
+  unsigned long long lastChangeTime = 0;
+
   bool relayOn = false;
+  bool handleRelayOn = false;
   unsigned long lastActMs = 0;
   int prevActIdx = -1;
   const std::vector<int> relayPins = {27, 26, 25, 33, 32}; // add pins here
@@ -30,23 +34,54 @@ struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
       pinMode(p, OUTPUT);
     return true;
   }
-
   void handle() override {
-    if (pinDelayMs == 0)
+    const auto now = millis();
+    if ((lastChangeTime > 0) && ((now - lastChangeTime) < debounceTime)) {
+      if ((lastActMs > 0) && (prevActIdx < int(relayPins.size()) - 1)) {
+        lastActMs = now;
+        prevActIdx = -1;
+      }
       return;
+    }
+
+    if (pinDelayMs == 0) {
+      if (handleRelayOn != relayOn) {
+        handleRelayOn = relayOn;
+        Serial.print(F("[app] setting relay to  "));
+        if (relayOn)
+          Serial.print(F("on  "));
+        else
+          Serial.print(F("off "));
+        Serial.println(now / 1000.0);
+        for (auto &p : relayPins)
+          digitalWrite(p, relayOn);
+      }
+      return;
+    }
 
     if ((lastActMs > 0) && (prevActIdx < int(relayPins.size()) - 1)) {
 
-      auto now = millis();
       int idxAct = (now - lastActMs) / pinDelayMs;
+      if (idxAct < 0) {
+        Serial.println(F(">>>>>>>>>WHaaaat???"));
+        idxAct = 0;
+      }
+      if (prevActIdx < -1) {
+        Serial.println(F(">>>>>>>>>WHaaaat???"));
+        prevActIdx = -1;
+      }
       if (idxAct >= relayPins.size())
         idxAct = relayPins.size() - 1;
 
       for (int i = prevActIdx + 1; i <= idxAct; i++) {
-        auto p = relayPins[i];
         Serial.print(F("[app] setting relay pin "));
         Serial.print(i);
-        Serial.println(relayOn ? " on " : " off");
+        if (relayOn)
+          Serial.print(F(" on  "));
+        else
+          Serial.print(F(" off "));
+        Serial.println(now / 1000.0);
+        auto p = relayPins[i];
         digitalWrite(p, relayOn);
       }
       prevActIdx = idxAct;
@@ -67,18 +102,25 @@ struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
   }
 
   void setRelayState(bool b) {
+    const auto now = millis();
     if (relayOn != b) {
-      Serial.print(F("[app] setting relay to  "));
-      Serial.println(b ? "on " : "off");
+      if (now - lastChangeTime < debounceTime) {
+        Serial.println(F("[app] debouncing relay "));
+      }
+      lastChangeTime = now;
+      // Serial.print(F("[app] setting relay to  "));
+      // if (b)
+      //   Serial.print(F("on  "));
+      // else
+      //   Serial.print(F("off "));
     }
     relayOn = b;
 
     if (pinDelayMs == 0) {
-      for (auto &p : relayPins)
-        digitalWrite(p, relayOn);
+
     } else {
       prevActIdx = -1;
-      lastActMs = millis();
+      lastActMs = now;
     }
   }
 };
