@@ -1,6 +1,28 @@
 #include <Arduino.h>
 
+// #define DISABLE_WIFI
+// #define DISABLE_RTC
+// #define DISABLE_BROWNOUT
+// #define DISABLE_AGENDA
+
+// #define CONFIG_BROWNOUT_DET_LVL_SEL_5 1
+
+// brownout stuff
+// #include "driver/rtc_cntl.h"
+// #include "soc/rtc_cntl_reg.h"
+// #include "soc/soc.h"
+
+// #ifdef CONFIG_BROWNOUT_DET_LVL
+// #define BROWNOUT_DET_LVL CONFIG_BROWNOUT_DET_LVL
+// #else
+// #define BROWNOUT_DET_LVL 5
+// #endif // CONFIG_BROWNOUT_DET_LVL
+
+#ifndef DISABLE_WIFI
 #define OTA 1
+#else
+#define OTA 0
+#endif
 
 #if OTA
 #include <ArduinoOTA.h>
@@ -24,8 +46,10 @@
 
 #include "RootAPI.h"
 
+#ifndef DISABLE_WIFI
 #include "webServer.h"
 OSCAPI OSCApiParser;
+#endif
 #include <string>
 
 int relayPin = 3;
@@ -38,7 +62,29 @@ int checkAgendaTime = 1000;
 unsigned long long lastCheckAgendaTime = 0;
 // std::string myOSCID = "2";
 bool firstValidConnection = false;
+
+// void IRAM_ATTR brown(void *z) { Serial.println(F(">>>>>>>Brownout")); }
+
 void setup() {
+  // #ifdef DISABLE_BROWNOUT
+  //   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // disable   detector
+  // #else
+  //   REG_WRITE(
+  //       RTC_CNTL_BROWN_OUT_REG,
+  //       RTC_CNTL_BROWN_OUT_ENA             /* Enable BOD */
+  //           | RTC_CNTL_BROWN_OUT_PD_RF_ENA /* Automatically power down RF */
+  //           /* Reset timeout must be set to >1 even if BOR feature is not
+  //           used
+  //            */
+  //           | (2 << RTC_CNTL_BROWN_OUT_RST_WAIT_S) |
+  //           (BROWNOUT_DET_LVL << RTC_CNTL_DBROWN_OUT_THRES_S));
+
+  //   // ESP_ERROR_CHECK(rtc_isr_register(brown, NULL,
+  //   // RTC_CNTL_BROWN_OUT_INT_ENA_M));
+
+  //   // REG_SET_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_BROWN_OUT_INT_ENA_M);
+
+  // #endif
   // Pour a bowl of serial
   Serial.begin(115200);
 
@@ -49,9 +95,11 @@ void setup() {
 
   Serial.println("SPIFFS inited");
   Serial.print("total bytes");
-  Serial.println(String(SPIFFS.totalBytes()));
+  auto totB = String(SPIFFS.totalBytes());
+  Serial.println(totB);
   Serial.print("used bytes");
-  Serial.println(String(SPIFFS.usedBytes()));
+  auto uB = String(SPIFFS.usedBytes());
+  Serial.println(uB);
 
   std::string hostName = root.getHostName();
   if (hostName.size() == 0) {
@@ -85,15 +133,18 @@ void setup() {
   });
 #endif
   // delay(100);
+#ifndef DISABLE_WIFI
   connectivity::setup(type, hostName);
+#endif
 
   // delay(100);
   // esp_now_init();
   if (!root.setup()) {
     PRINTLN("error while setting up root");
   }
+#ifndef DISABLE_RTC
   root.rtc.onTimeChange = onTimeChange;
-
+#endif
   updateStateFromAgenda(false);
 }
 
@@ -103,9 +154,12 @@ static void updateStateFromAgenda(bool quiet) {
   }
   bool shouldBeActive = root.scheduleAPI.shouldBeOn();
   // if (!quiet) {
-  Serial.print("agenda should be ");
-  Serial.println(shouldBeActive ? "on" : "off");
-  }
+  Serial.print(F("agenda should be "));
+  if (shouldBeActive)
+    Serial.println(F("on "));
+  else
+    Serial.println(F("off"));
+  // }
   root.activate(shouldBeActive);
   // OSCMessage amsg("/activate");
   // amsg.add<int>(shouldBeActive ? 1 : 0);
@@ -124,13 +178,24 @@ static void onTimeChange() {
   updateStateFromAgenda(false);
 }
 
+bool testPin = false;
+unsigned long long lastCheckTest = 0;
+int checkTestTime = 80;
 void loop() {
   auto t = millis();
+#ifndef DISABLE_AGENDA
   if (((t - lastCheckAgendaTime) > checkAgendaTime)) {
     updateStateFromAgenda(false);
     lastCheckAgendaTime = t;
   }
+#endif
+  // if (((t - lastCheckTest) > checkTestTime)) {
+  //   testPin = !testPin;
+  //   root.activate(testPin);
+  //   lastCheckTest = t;
+  // }
   root.handle();
+#ifndef DISABLE_WIFI
   if (connectivity::handleConnection()) {
     if (!firstValidConnection) {
       initWebServer(fileChanged);
@@ -151,7 +216,8 @@ void loop() {
         bool needAnswer = false;
         auto &msg = *bundle.getOSCMessage(i);
         DBGMSG(F("[msg] new msg : "));
-        DBGMSGLN(OSCAPI::getAddress(msg).c_str());
+        auto msgStr = OSCAPI::getAddress(msg);
+        DBGMSGLN(msgStr.c_str());
         // bundle.getOSCMessage(i)->getAddress(OSCAPI::OSCEndpoint::getBuf());
         // DBGMSGLN(OSCAPI::OSCEndpoint::getBuf());
         auto res = OSCApiParser.processOSC(&root, msg, needAnswer);
@@ -171,16 +237,19 @@ void loop() {
             OSCMessage rmsg(OSCAPI::OSCEndpoint::getBuf());
             if (OSCApiParser.listToOSCMessage(TypedArgList(res.res), rmsg)) {
               connectivity::sendOSCResp(rmsg);
-              DBGOSC((String("sent resp : ") +
-                      String(OSCAPI::OSCEndpoint::getBuf()) + " " +
-                      String(res.toString().c_str()) + " to " +
-                      connectivity::udpRcv.remoteIP().toString() + ":" +
-                      String(connectivity::udpRcv.remotePort()))
-                         .c_str());
+              auto rString = res.toString();
+              auto fullString =
+                  (String("sent resp : ") +
+                   String(OSCAPI::OSCEndpoint::getBuf()) + " " +
+                   String(rString.c_str()) + " to " +
+                   connectivity::udpRcv.remoteIP().toString() + ":" +
+                   String(connectivity::udpRcv.remotePort()));
+              DBGOSC(fullString.c_str());
             }
           }
           // DBGMSG("res : ");
-          // DBGMSGLN(res.toString().c_str());
+          // auto rS = res.toString();
+          // DBGMSGLN(rS.c_str());
         }
 #endif
         DBGMSGLN(F("[msg] end OSC"));
@@ -193,4 +262,5 @@ void loop() {
     yield();
     // delay(10);
   }
+#endif
 }

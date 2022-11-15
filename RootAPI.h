@@ -4,11 +4,14 @@
 #include "RelayAPI.h"
 #include "SchedulerAPI.h"
 #include <fstream>
+
 struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
 
   RelayAPI relayApi;
   SchedulerAPI scheduleAPI;
+#ifndef DISABLE_RTC
   ESPRTC rtc;
+#endif
   bool isAgendaDisabled = false;
   RootAPI() : APIAndInstance<RootAPI>(this), MapNode() {
 
@@ -41,7 +44,9 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
     // childs
     addChild("relay", &relayApi);
     addChild("schedule", &scheduleAPI);
+#ifndef DISABLE_RTC
     addChild("rtc", &rtc);
+#endif
   }
 
   RootAPI(RootAPI &) = delete;
@@ -71,17 +76,27 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
   bool activate(bool b) {
     if (isActivated != b) {
       Serial.print(F("[app] activating to  "));
-      Serial.println(b ? "on " : "off");
+      if (b)
+        Serial.println(F("on  "));
+      else
+        Serial.println(F("off "));
     }
     isActivated = b;
     relayApi.setRelayState(b);
   }
 
-  void setTimeStr(std::string s) { rtc.setTimeStr(s); }
+  void setTimeStr(std::string s) {
+#ifndef DISABLE_RTC
+    rtc.setTimeStr(s);
+#endif
+  }
 
   void setAgendaDisabled(bool b) {
     Serial.print("Agenda is ");
-    Serial.println(b ? "disabled" : "enabled");
+    if (b)
+      Serial.println(F("disabled "));
+    else
+      Serial.println(F("enabled "));
     isAgendaDisabled = b;
     // else if(msg.address === "/isAgendaDisabled"){
     //   if(msg.args.length === 1){
