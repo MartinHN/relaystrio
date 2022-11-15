@@ -25,6 +25,33 @@
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++14"
+        },
+
+        {
+            "name": "OSX",
+            "includePath": [
+                "/Users/tinmarbook/Library/Arduino15/packages/esp32/hardware/esp32/2.0.5/cores/esp32",
+                "/Users/tinmarbook/Library/Arduino15/packages/esp32/hardware/esp32/2.0.5/libraries",
+                "/Users/tinmarbook/Library/Arduino15/packages/esp32/hardware/esp32/2.0.5/tools/sdk/include/esp32/",
+                "/Users/tinmarbook/Library/Arduino15/packages/esp32/tools/**",
+                "/Users/tinmarbook/Arduino/libraries/**",
+                // "/home/tinmar/Applications/arduino-1.8.13/libraries/**",
+                "/Users/tinmarbook/Library/Arduino15/packages/esp32/hardware/esp32/2.0.5/**",
+                "/home/tinmar/Applications/arduino-1.8.13/hardware/arduino/avr/cores/arduino",
+                "/home/tinmar/Applications/arduino-1.8.13/hardware/tools/avr/avr/include",
+                "/Users/tinmarbook/Library/Arduino15/packages/esp32/hardware/esp32/2.0.5/variants/doitESP32devkitV1" // for pin_arduino.h
+            ],
+            "forcedInclude": [
+                "${workspaceFolder}/lib/JPI/src/API.conf.h"
+            ],
+            "defines": [
+                "USBCON",
+                "ARDUINO=150"
+            ],
+            // "intelliSenseMode": "clang-x64",
+            // "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++14"
         }
     ],
     "version": 4
