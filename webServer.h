@@ -3,6 +3,7 @@
 #include "AsyncTCP.h"
 #include "ESPAsyncWebServer.h"
 #include "SPIFFS.h"
+#include "version.h"
 int webPort = connectivity::conf::localPort;
 AsyncWebServer server(webPort);
 
@@ -118,6 +119,12 @@ void initWebServer(FileChangeCB cb) {
       },
       nullptr, SPIFFSSetter("/info.json"));
 
+  server.on("/version", HTTP_GET, [](AsyncWebServerRequest *req) {
+    Serial.print("getting hash : ");
+    Serial.println(GIT_HASH);
+    req->send(200, "application/text", GIT_HASH);
+  });
+  //
   // // niceName
   // server.on("/niceName", HTTP_GET, [](AsyncWebServerRequest *req) {
   //   Serial.println("getting niceName.txt");

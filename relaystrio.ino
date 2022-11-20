@@ -25,7 +25,8 @@
 #endif
 
 #if OTA
-#include <ArduinoOTA.h>
+#include "OTAUpdater.h"
+OTAUpdater myOTA;
 #endif
 
 #define DBG_MSG 1
@@ -112,25 +113,7 @@ void setup() {
   }
 
 #if OTA
-  ArduinoOTA.setHostname(hostName.c_str());
-  ArduinoOTA.onStart([]() { Serial.println("[ota] Start"); });
-  ArduinoOTA.onEnd([]() { Serial.println("[ota] \nEnd"); });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("%u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("[ota] Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR)
-      Serial.println("[ota] Auth Failed");
-    else if (error == OTA_BEGIN_ERROR)
-      Serial.println("[ota] Begin Failed");
-    else if (error == OTA_CONNECT_ERROR)
-      Serial.println("[ota] Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR)
-      Serial.println("[ota] Receive Failed");
-    else if (error == OTA_END_ERROR)
-      Serial.println("[ota] End Failed");
-  });
+  myOTA.setup(hostName);
 #endif
   // delay(100);
 #ifndef DISABLE_WIFI
@@ -201,12 +184,12 @@ void loop() {
     if (!firstValidConnection) {
       initWebServer(fileChanged);
 #if OTA
-      ArduinoOTA.begin();
+      myOTA.begin();
 #endif
       firstValidConnection = true;
     }
 #if OTA
-    ArduinoOTA.handle();
+    myOTA.handle();
 #endif
 
     // PRINTLN(">>>>loop ok");

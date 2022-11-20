@@ -342,6 +342,7 @@ struct SchedulerAPI : public APIAndInstance<SchedulerAPI>, LeafNode {
     try {
       cereal::JSONInputArchive archive(fileToRead);
       agenda.serialize(archive);
+      f.close();
     } catch (const cereal::Exception &e) {
       Serial.println(F("!!!!! error while loading agenda"));
       Serial.println(e.what());

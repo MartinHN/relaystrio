@@ -3,11 +3,12 @@
     "board": "esp32:esp32:esp32",
     "configuration": "PSRAM=enabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,LoopCore=1,EventsCore=1,DebugLevel=error",
     "output": "build",
-    "port": "/dev/tty.usbserial-1110",
+    "port": "/dev/tty.usbserial-1120",
+    "prebuild": "./genVersionHeader.sh",
     "buildPreferences": [
         [
             "compiler.cpp.extra_flags",
-            "-Wall -frtti -std=gnu++17 -D_GLIBCXX_USE_C99 -I/Users/tinmarbook/Dev/momo/relaystrio/lib/JPI/lib/cereal/include"
+            "-Wall -frtti -std=gnu++17 -D_GLIBCXX_USE_C99 -I/Users/tinmarbook/Dev/momo/relaystrio/lib/JPI/lib/cereal/include -DHAS_VERSION_HEADER"
         ]
     ]
 }
