@@ -124,6 +124,13 @@ void initWebServer(FileChangeCB cb) {
     Serial.println(GIT_HASH);
     req->send(200, "application/text", GIT_HASH);
   });
+
+  server.on("/rssi", HTTP_GET, [](AsyncWebServerRequest *req) {
+    Serial.print("getting rssi : ");
+    String rssi(WiFi.RSSI());
+    Serial.println(rssi);
+    req->send(200, "application/text", rssi);
+  });
   //
   // // niceName
   // server.on("/niceName", HTTP_GET, [](AsyncWebServerRequest *req) {
