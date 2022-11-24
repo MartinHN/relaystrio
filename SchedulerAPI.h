@@ -175,6 +175,8 @@ struct HourRange {
     auto ed = end.getDayMinutes();
     if (ed == 0)
       ed = 24 * 60;
+    if (ed < st)
+      ed += 24 * 60;
 
     DBGSCH("Day: check if  ");
     DBGSCH(String(dayMin));
