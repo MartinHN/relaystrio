@@ -2,12 +2,19 @@
 PATH_TO_TOOLS="/Users/tinmarbook/Library/Arduino15/packages/esp32/hardware/esp32/2.0.4/tools"
 # PATH_TO_TOOLS="/home/tinmar/.arduino15/packages/esp32/hardware/esp32/1.0.6/tools"
 curH=$(git rev-parse HEAD)
-serverAddr=http://lumestrio100.local:3003/knownDevices
+serverAddr=http://lumestrio1.local:3003/knownDevices
 # serverAddr=http://localhost:3003/knownDevices
 missing=""
 uptodate=""
 updateds=""
 failed=""
+
+if [ "$1" == "" ]; then
+    tryAll=1
+elif [ $1 == "f" ]; then
+    tryAll=1
+    force=1
+fi
 
 function getVersion() {
     v=$(curl --connect-timeout 5 $1:3000/version --silent)
@@ -21,7 +28,11 @@ function getVersion() {
 function updateIfNeeded() {
     r=$(sed -e 's/"//g' <<<"$1")
     echo "checking $r"
-    v=$(getVersion "$r")
+    if [ "$2" != "" ]; then
+        v="force"
+    else
+        v=$(getVersion "$r")
+    fi
     if [ "$v" == "-1" ]; then
         echo "$r not connected"
         missing+="$r "
@@ -42,7 +53,7 @@ function updateIfNeeded() {
 }
 
 function upload() {
-    python3 "$PATH_TO_TOOLS/espota.py" -i "$1" -p 3232 --auth= -f build/relaystrio.ino.bin
+    python3 "$PATH_TO_TOOLS/espota.py" --timeout 10 --progress -i "$1" -p 3232 --auth= -f build/relaystrio.ino.bin
 }
 
 function getAllKnown() {
@@ -66,7 +77,7 @@ function printNicenames() {
     done
 }
 
-if [ "$1" == "" ]; then
+if [ "$tryAll" == "1" ]; then
     kd="$(getAllKnown)"
     # echo "$(showKd "$kd")"
     ips=$(getAllIpRegistered "$kd")
@@ -75,7 +86,7 @@ if [ "$1" == "" ]; then
     # echo $ips
     for i in $ips; do
         # echo $i
-        updateIfNeeded $i
+        updateIfNeeded $i $force
     done
 
     echo "up to date were :\n$(printNicenames "$kd" "$uptodate") "
