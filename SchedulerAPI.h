@@ -346,13 +346,13 @@ struct SchedulerAPI : public APIAndInstance<SchedulerAPI>, LeafNode {
       agenda.serialize(archive);
       f.close();
     } catch (const cereal::Exception &e) {
-      Serial.println(F("!!!!! error while loading agenda"));
+      Serial.println("!!!!! error while loading agenda");
       Serial.println(e.what());
       agenda = {};
       return false;
     } catch (...) {
       std::exception_ptr e = std::current_exception();
-      Serial.println(F("!!!!! STD error while loading agenda"));
+      Serial.println("!!!!! STD error while loading agenda");
       if (e)
         Serial.println(e.__cxa_exception_type()->name());
 

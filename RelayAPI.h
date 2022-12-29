@@ -47,11 +47,11 @@ struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
     if (pinDelayMs == 0) {
       if (handleRelayOn != relayOn) {
         handleRelayOn = relayOn;
-        Serial.print(F("[app] setting relay to  "));
+        Serial.print("[app] setting relay to  ");
         if (relayOn)
-          Serial.print(F("on  "));
+          Serial.print("on  ");
         else
-          Serial.print(F("off "));
+          Serial.print("off ");
         Serial.println(now / 1000.0);
         for (auto &p : relayPins)
           digitalWrite(p, relayOn);
@@ -63,23 +63,23 @@ struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
 
       int idxAct = (now - lastActMs) / pinDelayMs;
       if (idxAct < 0) {
-        Serial.println(F(">>>>>>>>>WHaaaat???"));
+        Serial.println(">>>>>>>>>WHaaaat???");
         idxAct = 0;
       }
       if (prevActIdx < -1) {
-        Serial.println(F(">>>>>>>>>WHaaaat???"));
+        Serial.println(">>>>>>>>>WHaaaat???");
         prevActIdx = -1;
       }
       if (idxAct >= relayPins.size())
         idxAct = relayPins.size() - 1;
 
       for (int i = prevActIdx + 1; i <= idxAct; i++) {
-        Serial.print(F("[app] setting relay pin "));
+        Serial.print("[app] setting relay pin ");
         Serial.print(i);
         if (relayOn)
-          Serial.print(F(" on  "));
+          Serial.print(" on  ");
         else
-          Serial.print(F(" off "));
+          Serial.print(" off ");
         Serial.println(now / 1000.0);
         auto p = relayPins[i];
         digitalWrite(p, relayOn);
@@ -105,14 +105,14 @@ struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
     const auto now = millis();
     if (relayOn != b) {
       if (now - lastChangeTime < debounceTime) {
-        Serial.println(F("[app] debouncing relay "));
+        Serial.println("[app] debouncing relay ");
       }
       lastChangeTime = now;
-      // Serial.print(F("[app] setting relay to  "));
+      // Serial.print("[app] setting relay to  ");
       // if (b)
-      //   Serial.print(F("on  "));
+      //   Serial.print("on  ");
       // else
-      //   Serial.print(F("off "));
+      //   Serial.print("off ");
     }
     relayOn = b;
 

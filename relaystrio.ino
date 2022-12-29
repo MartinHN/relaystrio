@@ -64,7 +64,7 @@ unsigned long long lastCheckAgendaTime = 0;
 // std::string myOSCID = "2";
 bool firstValidConnection = false;
 
-// void IRAM_ATTR brown(void *z) { Serial.println(F(">>>>>>>Brownout")); }
+// void IRAM_ATTR brown(void *z) { Serial.println(">>>>>>>Brownout"); }
 
 void setup() {
   // #ifdef DISABLE_BROWNOUT
@@ -137,11 +137,11 @@ void updateStateFromAgenda(bool quiet) {
   }
   bool shouldBeActive = root.scheduleAPI.shouldBeOn();
   // if (!quiet) {
-  // Serial.print(F("agenda should be "));
+  // Serial.print("agenda should be ");
   // if (shouldBeActive)
-  //   Serial.println(F("on "));
+  //   Serial.println("on ");
   // else
-  //   Serial.println(F("off"));
+  //   Serial.println("off");
   // }
   root.activate(shouldBeActive);
   // OSCMessage amsg("/activate");
@@ -199,7 +199,7 @@ void loop() {
       for (int i = 0; i < bundle.size(); i++) {
         bool needAnswer = false;
         auto &msg = *bundle.getOSCMessage(i);
-        DBGMSG(F("[msg] new msg : "));
+        DBGMSG("[msg] new msg : ");
         auto msgStr = OSCAPI::getAddress(msg);
         DBGMSGLN(msgStr.c_str());
         // bundle.getOSCMessage(i)->getAddress(OSCAPI::OSCEndpoint::getBuf());
@@ -211,11 +211,11 @@ void loop() {
         }
 #if 1
         if (needAnswer) {
-          DBGMSGLN(F("[msg] try send resp"));
+          DBGMSGLN("[msg] try send resp");
           if (!bool(res)) {
-            PRINTLN(F("[msg] invalid res returned from OSCApiParser resp"));
+            PRINTLN("[msg] invalid res returned from OSCApiParser resp");
           } else if (!res.res) {
-            PRINTLN(F("[msg]  no res returned from OSCApiParser resp"));
+            PRINTLN("[msg]  no res returned from OSCApiParser resp");
           } else {
             msg.getAddress(OSCAPI::OSCEndpoint::getBuf());
             OSCMessage rmsg(OSCAPI::OSCEndpoint::getBuf());
@@ -236,7 +236,7 @@ void loop() {
           // DBGMSGLN(rS.c_str());
         }
 #endif
-        DBGMSGLN(F("[msg] end OSC"));
+        DBGMSGLN("[msg] end OSC");
       }
     }
     yield();

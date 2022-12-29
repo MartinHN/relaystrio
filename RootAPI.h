@@ -78,7 +78,7 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
       if (isActivated != b) {
         isActivated = b;
 
-        Serial.print(F("[app] activating to  "));
+        Serial.print("[app] activating to  ");
         if (b)
           Serial.println("on  ");
         else
@@ -88,7 +88,7 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
 
     } catch (...) {
       std::exception_ptr e = std::current_exception();
-      Serial.println(F("!!!!! error while activating"));
+      Serial.println("!!!!! error while activating");
       if (e)
         Serial.println(e.__cxa_exception_type()->name());
       return false;
@@ -105,9 +105,9 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
   void setAgendaDisabled(bool b) {
     Serial.print("Agenda is ");
     if (b)
-      Serial.println(F("disabled "));
+      Serial.println("disabled ");
     else
-      Serial.println(F("enabled "));
+      Serial.println("enabled ");
     isAgendaDisabled = b;
     // else if(msg.address === "/isAgendaDisabled"){
     //   if(msg.args.length === 1){
@@ -129,7 +129,7 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
       myfile << s << "\n";
       myfile.close();
     } else {
-      PRINTLN(F("!!! cant write hostname file"));
+      PRINTLN("!!! cant write hostname file");
     }
   }
 
@@ -141,7 +141,7 @@ struct RootAPI : public APIAndInstance<RootAPI>, public MapNode {
       myfile.close();
     } else {
       myfile.close();
-      PRINTLN(F("!!! cant read hostname file"));
+      PRINTLN("!!! cant read hostname file");
     }
     return line;
   }
