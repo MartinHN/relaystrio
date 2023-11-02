@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.ejs": "html",
         "*.tcc": "cpp",
         "deque": "cpp",
         "string": "cpp",
@@ -92,7 +93,8 @@
         "regex": "cpp",
         "set": "cpp",
         "stack": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "filesystem": "cpp"
     },
     "clang-tidy.compilerArgs": [
         "/home/tinmar/.arduino15/packages/esp32/hardware/esp32/1.0.4/cores/esp32",

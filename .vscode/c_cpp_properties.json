@@ -51,7 +51,8 @@
             // "intelliSenseMode": "clang-x64",
             // "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
-            "cppStandard": "c++14"
+            "cppStandard": "c++14",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ],
     "version": 4
