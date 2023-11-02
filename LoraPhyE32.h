@@ -16,7 +16,6 @@ auto dbgPhy = Dbg("[phy]");
 byte lastPhyRespStatus = 1;
 void auxInterrupt();
 
-// byte numAllowedFails = 10;
 bool chkLoc(byte status, int ln, const char *successStr = nullptr) noexcept {
   if (status == 1) {
     if (successStr != nullptr)
@@ -24,8 +23,6 @@ bool chkLoc(byte status, int ln, const char *successStr = nullptr) noexcept {
   } else {
     dbg.print("failed at", ln, ", code ",
               getResponseDescriptionByParams(status));
-    // if (numAllowedFails-- <= 0)
-    //   ESP.restart();
   }
   lastPhyRespStatus = status;
   return status == 1;
@@ -136,33 +133,6 @@ struct LoraPhyClass {
 
     c.close();
     return true;
-    /*
-       ResponseStructContainer c;
-       c = e32ttl.getConfiguration();
-       // It's important get configuration pointer before all other operation
-       Configuration configuration = *(Configuration *)c.data;
-       Serial.println(c.status.getResponseDescription());
-       Serial.println(c.status.code);
-
-       configuration.ADDL = 0x0;
-       configuration.ADDH = 0x1;
-       configuration.CHAN = 0x19;
-
-       configuration.OPTION.fec = FEC_0_OFF;
-       configuration.OPTION.fixedTransmission = FT_TRANSPARENT_TRANSMISSION;
-       configuration.OPTION.ioDriveMode = IO_D_MODE_PUSH_PULLS_PULL_UPS;
-       configuration.OPTION.transmissionPower = POWER_17;
-       configuration.OPTION.wirelessWakeupTime = WAKE_UP_1250;
-
-       configuration.SPED.airDataRate = AIR_DATA_RATE_011_48;
-       configuration.SPED.uartBaudRate = UART_BPS_115200;
-       configuration.SPED.uartParity = MODE_00_8N1;
-
-       // Set configuration changed and set to not hold the configuration
-       ResponseStatus rs = e32ttl.setConfiguration(configuration,
-       WRITE_CFG_PWR_DWN_LOSE); Serial.println(rs.getResponseDescription());
-       Serial.println(rs.code);
-       */
   }
 
   void end() {
@@ -239,15 +209,6 @@ struct LoraPhyClass {
 
   bool readNext(uint8_t &s) {
 
-    // ResponseStructContainer rs = e32ttl.receiveMessage(1);
-    // if (!chk(rs.status)) {
-    //   rs.close();
-    //   return false;
-    // }
-
-    // s = *(uint8_t *)rs.data;
-    // rs.close();
-    // return true;
     if (!Serial2.available())
       return false;
     Serial2.read(&s, 1);
