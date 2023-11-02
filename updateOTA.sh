@@ -1,5 +1,5 @@
 # set -x
-PATH_TO_TOOLS="/Users/tinmarbook/Library/Arduino15/packages/esp32/hardware/esp32/2.0.4/tools"
+PATH_TO_TOOLS="/Users/tinmarbook/Library/Arduino15/packages/esp32/hardware/esp32/2.0.5/tools"
 # PATH_TO_TOOLS="/home/tinmar/.arduino15/packages/esp32/hardware/esp32/1.0.6/tools"
 curH=$(git rev-parse HEAD)
 serverAddr=http://lumestrio1.local:3003/knownDevices
@@ -98,3 +98,6 @@ if [ "$tryAll" == "1" ]; then
 else
     upload $1
 fi
+
+
+exit 0
