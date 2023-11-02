@@ -1,4 +1,9 @@
 #include <Arduino.h>
+// on esp devkit lora uses psram pins, disable them!!!
+#ifdef F
+#undef F
+#endif
+#define F(x) x
 
 // #define DISABLE_WIFI
 // #define DISABLE_RTC
@@ -29,6 +34,8 @@
 OTAUpdater myOTA;
 #endif
 
+#include "LoraApp.h"
+
 #define DBG_MSG 1
 
 #if DBG_MSG
@@ -52,8 +59,6 @@ OTAUpdater myOTA;
 OSCAPI OSCApiParser;
 #endif
 #include <string>
-
-int relayPin = 3;
 
 RootAPI root;
 
@@ -112,6 +117,8 @@ void setup() {
     hostName = tmp;
   }
 
+  LoraApp::setup(hostName);
+
 #if OTA
   myOTA.setup(hostName);
 #endif
@@ -167,6 +174,7 @@ int checkTestTime = 80;
 void loop() {
   auto t = millis();
   Serial.flush();
+
 #ifndef DISABLE_AGENDA
   if (((t - lastCheckAgendaTime) > checkAgendaTime)) {
     updateStateFromAgenda(false);
@@ -178,6 +186,7 @@ void loop() {
   //   root.activate(testPin);
   //   lastCheckTest = t;
   // }
+  LoraApp::handle();
   root.handle();
 #ifndef DISABLE_WIFI
   if (connectivity::handleConnection()) {
@@ -193,23 +202,20 @@ void loop() {
 #endif
 
     // PRINTLN(">>>>loop ok");
-    OSCBundle bundle;
-    if (connectivity::receiveOSC(bundle)) {
+    OSCMessage msg = {};
+    if (connectivity::receiveOSC(msg)) {
 
-      for (int i = 0; i < bundle.size(); i++) {
-        bool needAnswer = false;
-        auto &msg = *bundle.getOSCMessage(i);
-        DBGMSG("[msg] new msg : ");
-        auto msgStr = OSCAPI::getAddress(msg);
-        DBGMSGLN(msgStr.c_str());
-        // bundle.getOSCMessage(i)->getAddress(OSCAPI::OSCEndpoint::getBuf());
-        // DBGMSGLN(OSCAPI::OSCEndpoint::getBuf());
-        auto res = OSCApiParser.processOSC(&root, msg, needAnswer);
-        if (!bool(res)) {
-          Serial.print("!!! message parsing err : ");
-          Serial.println(res.errMsg.c_str());
-        }
-#if 1
+      bool needAnswer = false;
+      DBGMSG("[msg] new msg : ");
+      auto msgStr = OSCAPI::getAddress(msg);
+      DBGMSGLN(msgStr.c_str());
+      // bundle.getOSCMessage(i)->getAddress(OSCAPI::OSCEndpoint::getBuf());
+      // DBGMSGLN(OSCAPI::OSCEndpoint::getBuf());
+      auto res = OSCApiParser.processOSC(&root, msg, needAnswer);
+      if (!bool(res)) {
+        Serial.print("!!! message parsing err : ");
+        Serial.println(res.errMsg.c_str());
+      }
         if (needAnswer) {
           DBGMSGLN("[msg] try send resp");
           if (!bool(res)) {
@@ -235,9 +241,7 @@ void loop() {
           // auto rS = res.toString();
           // DBGMSGLN(rS.c_str());
         }
-#endif
         DBGMSGLN("[msg] end OSC");
-      }
     }
     yield();
     // delay(10);
@@ -246,5 +250,5 @@ void loop() {
     yield();
     // delay(10);
   }
-#endif
+#endif // DISABLE_WIFI
 }
