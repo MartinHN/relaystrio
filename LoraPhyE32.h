@@ -191,7 +191,7 @@ struct LoraPhyClass {
         dbg.print("nothing available");
         return;
       }
-      flagRxMs = millis();
+      // flagRxMs = millis();
       if (onRxFlag) {
         isProcessingRxFlag = true;
         onRxFlag();
@@ -316,16 +316,9 @@ struct LoraPhyClass {
 LoraPhyClass LoraPhy;
 
 void IRAM_ATTR auxInterrupt() {
-  // dbg.print("Aux Up!");
   if ((LoraPhy.phyState == LoraPhyClass::PhyState::Rx) &&
       !LoraPhy.isProcessingRxFlag) {
-    // dbg.print("msgInterrupt!");
-    // if (Serial2.available()) {
     newLoraMsg = true;
-    // LoraPhy.flagRxMs = millis();
-    // if (LoraPhy.onRxFlag)
-    //   LoraPhy.onRxFlag();
-    // newLoraMsg = false;
-    // }
+    LoraPhy.flagRxMs = millis();
   }
 }
