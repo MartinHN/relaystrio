@@ -23,5 +23,20 @@ struct Dbg {
     Serial.print(" : ");
     Serial.printf(format, a...);
   }
+
+  void printBuffer(uint8_t *buffer, size_t size) {
+    Serial.print(prefix);
+    Serial.print(" : ");
+    Serial.print("size ");
+    Serial.println(size);
+    Serial.print("0x");
+    for (uint8_t i = 0; i < size; i++) {
+      if (buffer[i] < 16)
+        Serial.print("0");
+      Serial.print(int(buffer[i]), HEX);
+      Serial.print(" ");
+    }
+    Serial.println("");
+  }
   const char *prefix;
 };
