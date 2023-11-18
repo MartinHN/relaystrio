@@ -10,7 +10,7 @@ struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
   bool handleRelayOn = false;
   unsigned long lastActMs = 0;
   int prevActIdx = -1;
-  const std::vector<int> relayPins = {27, 26, 25, 33, 32}; // add pins here
+  const std::vector<int> relayPins = {27, 26, 25}; //{27, 26, 25}; // add pins here
   // const std::vector<int> states;
   RelayAPI() : APIAndInstance<RelayAPI>(this) {
     rGetSet<bool>(
@@ -30,10 +30,13 @@ struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
   RelayAPI(RelayAPI &) = delete;
 
   bool setup() override {
-    for (auto &p : relayPins)
+    for (auto &p : relayPins) {
       pinMode(p, OUTPUT);
+      // pinMode(p, OUTPUT_OPEN_DRAIN);
+    }
     return true;
   }
+  int countOn = 0;
   void handle() override {
     const auto now = millis();
     if ((lastChangeTime > 0) && ((now - lastChangeTime) < debounceTime)) {
@@ -53,8 +56,23 @@ struct RelayAPI : public APIAndInstance<RelayAPI>, LeafNode {
         else
           Serial.print("off ");
         Serial.println(now / 1000.0);
+#if 0 // test individual pins
+        if (relayOn) {
+          countOn = (countOn + 1) % 4;
+          int i = 0;
+          for (auto &p : relayPins) {
+            if (countOn == 0 || countOn - 1 == i)
+              digitalWrite(p, relayOn);
+            i++;
+          }
+        } else {
+          for (auto &p : relayPins)
+            digitalWrite(p, relayOn);
+        }
+#else
         for (auto &p : relayPins)
           digitalWrite(p, relayOn);
+#endif
       }
       return;
     }
