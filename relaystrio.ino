@@ -5,6 +5,10 @@
 #endif
 #define F(x) x
 
+#include "Dbg.h"
+
+auto dbgMain = Dbg("[main]");
+
 // #define DISABLE_WIFI
 // #define DISABLE_RTC
 // #define DISABLE_BROWNOUT
@@ -42,9 +46,9 @@ OTAUpdater myOTA;
 #define DBGMSG(x) PRINT(x)
 #define DBGMSGLN(x) PRINTLN(x)
 #else
-#define DBGMSG(x)                                                              \
+#define DBGMSG(x)                                                                                                                                    \
   {}
-#define DBGMSGLN(x)                                                            \
+#define DBGMSGLN(x)                                                                                                                                  \
   {}
 #endif
 
@@ -53,6 +57,9 @@ OTAUpdater myOTA;
 // #include "./lib/JPI/wrappers/esp/time.hpp"
 
 #include "RootAPI.h"
+
+// #include "esp32-hal-bt.h" // to disable bt
+#include "FileHelpers.hpp"
 
 #ifndef DISABLE_WIFI
 #include "webServer.h"
@@ -71,7 +78,10 @@ bool firstValidConnection = false;
 
 // void IRAM_ATTR brown(void *z) { Serial.println(">>>>>>>Brownout"); }
 
+void fileChanged(const String &filename);
+
 void setup() {
+
   // #ifdef DISABLE_BROWNOUT
   //   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // disable   detector
   // #else
@@ -92,33 +102,36 @@ void setup() {
 
   // #endif
   // Pour a bowl of serial
+
   Serial.begin(115200);
 
-  if (!SPIFFS.begin(true)) {
-    Serial.println("An Error has occurred while mounting SPIFFS");
+  if (!ESPFS::init())
     return;
-  }
-
-  Serial.println("SPIFFS inited");
-  Serial.print("total bytes");
-  auto totB = String(SPIFFS.totalBytes());
-  Serial.println(totB);
-  Serial.print("used bytes");
-  auto uB = String(SPIFFS.usedBytes());
-  Serial.println(uB);
 
   std::string hostName = root.getHostName();
   if (hostName.size() == 0) {
     char tmp[20];
     uint8_t mac[6];
     WiFi.macAddress(mac);
-    sprintf(tmp, "esp32-%02x%02x%02x%02x%02x%02x", mac[0], mac[1], mac[2],
-            mac[3], mac[4], mac[5]);
+    sprintf(tmp, "esp32-%02x%02x%02x%02x%02x%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     hostName = tmp;
   }
 
   LoraApp::setup(hostName);
+  LoraApp::onSync = [](const String &tstr) { root.setTimeStr(tstr.c_str()); };
+  LoraApp::onActivate = [](bool shouldBeActive) { root.activate(shouldBeActive); };
+  LoraApp::onAgendaDisable = [](bool shouldBeDisabled) { root.isAgendaDisabled = shouldBeDisabled; };
+  LoraApp::isActive = []() { return root.isActivated; };
+  LoraApp::isAgendaDisabled = []() { return root.isAgendaDisabled; };
+  LoraApp::getAgendaMD5 = []() { return ESPFS::getMD5ForFile("/agenda.json"); };
+  LoraApp::onDisableWifi = [](bool shouldDisable) { connectivity::setWifiDisabled(shouldDisable); };
+  LoraApp::onLoraNewAgenda = [](const String &data) {
+    ESPFS::writeToFile("/agenda.json", data);
+    fileChanged("/agenda.json");
+  };
 
+  // if (!btStop())
+  //   PRINTLN("error while disabling bt");
 #if OTA
   myOTA.setup(hostName);
 #endif
@@ -159,6 +172,11 @@ void updateStateFromAgenda(bool quiet) {
 void fileChanged(const String &filename) {
   Serial.print("file change cb");
   Serial.println(filename);
+  if (filename.endsWith("agenda.json"))
+    ESPFS::updateMD5ForFile("/agenda.json");
+  // dbgMain.print("==========");
+  // dbgMain.print(ESPFS::readFile("/agenda.json"));
+  // dbgMain.print("----------");
   root.scheduleAPI.loadFromFileSystem();
   updateStateFromAgenda(false);
 }
@@ -216,39 +234,35 @@ void loop() {
         Serial.print("!!! message parsing err : ");
         Serial.println(res.errMsg.c_str());
       }
-        if (needAnswer) {
-          DBGMSGLN("[msg] try send resp");
-          if (!bool(res)) {
-            PRINTLN("[msg] invalid res returned from OSCApiParser resp");
-          } else if (!res.res) {
-            PRINTLN("[msg]  no res returned from OSCApiParser resp");
-          } else {
-            msg.getAddress(OSCAPI::OSCEndpoint::getBuf());
-            OSCMessage rmsg(OSCAPI::OSCEndpoint::getBuf());
-            if (OSCApiParser.listToOSCMessage(TypedArgList(res.res), rmsg)) {
-              connectivity::sendOSCResp(rmsg);
-              auto rString = res.toString();
-              auto fullString =
-                  (String("sent resp : ") +
-                   String(OSCAPI::OSCEndpoint::getBuf()) + " " +
-                   String(rString.c_str()) + " to " +
-                   connectivity::udpRcv.remoteIP().toString() + ":" +
-                   String(connectivity::udpRcv.remotePort()));
-              DBGOSC(fullString.c_str());
-            }
+      if (needAnswer) {
+        DBGMSGLN("[msg] try send resp");
+        if (!bool(res)) {
+          PRINTLN("[msg] invalid res returned from OSCApiParser resp");
+        } else if (!res.res) {
+          PRINTLN("[msg]  no res returned from OSCApiParser resp");
+        } else {
+          msg.getAddress(OSCAPI::OSCEndpoint::getBuf());
+          OSCMessage rmsg(OSCAPI::OSCEndpoint::getBuf());
+          if (OSCApiParser.listToOSCMessage(TypedArgList(res.res), rmsg)) {
+            connectivity::sendOSCResp(rmsg);
+            auto rString = res.toString();
+            auto fullString = (String("sent resp : ") + String(OSCAPI::OSCEndpoint::getBuf()) + " " + String(rString.c_str()) + " to " +
+                               connectivity::udpRcv.remoteIP().toString() + ":" + String(connectivity::udpRcv.remotePort()));
+            DBGOSC(fullString.c_str());
           }
-          // DBGMSG("res : ");
-          // auto rS = res.toString();
-          // DBGMSGLN(rS.c_str());
         }
-        DBGMSGLN("[msg] end OSC");
+        // DBGMSG("res : ");
+        // auto rS = res.toString();
+        // DBGMSGLN(rS.c_str());
+      }
+      DBGMSGLN("[msg] end OSC");
     }
-    yield();
-    // delay(10);
+    // yield();
+    delay(1);
 
   } else {
-    yield();
-    // delay(10);
+    // yield();
+    delay(1);
   }
 #endif // DISABLE_WIFI
 }
