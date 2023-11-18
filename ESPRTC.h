@@ -5,8 +5,18 @@
 #include <RtcDS1307.h>
 
 #define TIME_TESTS 1
+#define HAS_SNTP 0
+
 // #include <TZ.h>
 #include <Wire.h>
+struct WireScope {
+  WireScope() {
+    Wire.begin();
+    delay(20);
+  }
+  ~WireScope() { Wire.end(); }
+};
+
 #define MY_TZ PSTR("CET-1CEST,M3.5.0,M10.5.0/3") // TZ.h Europe_Paris
 
 struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
@@ -20,10 +30,10 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
     // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
     // rFunction<void, int32_t>("setLocalEpoch", &ESPRTC::setLocalTimeUTC);
-
+#if HAS_SNTP
     sntp_set_sync_mode(SNTP_SYNC_MODE_IMMED);
     configTzTime(MY_TZ, ntpServer);
-
+#endif
     instance(this);
   }
 
@@ -52,8 +62,9 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
     }
     syncRTCToLocal();
     // printLocalTime();
-
+#if HAS_SNTP
     sntp_set_time_sync_notification_cb(ntpSyncCbStatic);
+#endif
 
 #if TIME_TESTS
     {
@@ -98,6 +109,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
       // PRINTLN("[rtc] >>>>>>>>>end auto test");
     }
 #endif
+    Wire.end();
     return true;
   }
 
@@ -110,15 +122,15 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
     setRTCTime(time);
   }
 
-  bool syncLocalToRTC() {
-    time_t epoch;
-    if (!Helpers::getLocalTimeUTC(&epoch)) {
-      PRINTLN("[rtc] can't get local utc time");
-      return false;
-    }
-    setRTCTime(epoch);
-    return true;
-  }
+  // bool syncLocalToRTC() {
+  //   time_t epoch;
+  //   if (!Helpers::getLocalTimeUTC(&epoch)) {
+  //     PRINTLN("[rtc] can't get local utc time");
+  //     return false;
+  //   }
+  //   setRTCTime(epoch);
+  //   return true;
+  // }
 
   bool syncRTCToLocal() {
     time_t epoch;
@@ -133,6 +145,8 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
 
   void setRTCTime(time_t epochTime) {
     setLocalTimeUTC(epochTime);
+
+    WireScope scope;
     if (!rtc.GetIsRunning()) {
       PRINTLN("[rtc] rtc not running, not setting time");
       return;
@@ -145,6 +159,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
     PRINTLN("[rtc] rtc time has been updated");
   }
 
+private:
   void setLocalTimeUTC(time_t epoch) {
     struct timeval tv = {epoch, 0};
     settimeofday(&tv, NULL);
@@ -168,6 +183,7 @@ struct ESPRTC : public APIAndInstance<ESPRTC>, LeafNode {
   }
 
   bool getRTCTimeUTC(time_t *epoch) {
+    WireScope scope;
     if (!rtc.GetIsRunning())
       return false;
     auto rd = rtc.GetDateTime();
