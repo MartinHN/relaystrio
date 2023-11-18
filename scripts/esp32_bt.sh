@@ -80,12 +80,14 @@ echo "BT is ${BT}"
 # Parse addresses in backtrace and add them to REGS
 n=0
 for stk in $BT; do
-    echo "line $stk"
+    echo "linebt $stk"
     # ex: 0x400d38fe:0x3ffb1c50
-    if [[ $stk =~ '(0x40[0-2][0-9a-f]+):?.*' ]]; then
-        addr=${BASH_REMATCH[1]}
-        REGS+=("BT-${n}:${addr}")
-    fi
+    # if [[ $stk =~ '(0x40[0-2][0-9a-f]+):?.*' ]]; then
+    # addr=${BASH_REMATCH[1]}
+
+    addr=$(echo "$stk" | cut -d':' -f1)
+    REGS+=("BT-${n}:${addr}")
+    # fi
     let "n=$n + 1"
     #[[ $n -gt 10 ]] && break
 done
