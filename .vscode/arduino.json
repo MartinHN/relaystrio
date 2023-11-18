@@ -1,7 +1,7 @@
 {
     "sketch": "relaystrio.ino",
     "board": "esp32:esp32:esp32",
-    "configuration": "PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,LoopCore=1,EventsCore=1,DebugLevel=verbose,EraseFlash=none",
+    "configuration": "PSRAM=disabled,PartitionScheme=min_spiffs,CPUFreq=80,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,LoopCore=1,EventsCore=1,DebugLevel=error,EraseFlash=none",
     "output": "build",
     "port": "/dev/tty.usbserial-120",
     "prebuild": "./genVersionHeader.sh",
@@ -9,11 +9,11 @@
     "buildPreferences": [
         [
             "compiler.cpp.extra_flags",
-            "-Wall -frtti -std=gnu++17 -D_GLIBCXX_USE_C99 -I/Users/tinmarbook/Dev/momo/relaystrio/lib/JPI/lib/cereal/include -DHAS_VERSION_HEADER"
+            "-Wall -Wpedantic -frtti -std=gnu++17 -D_GLIBCXX_USE_C99 -I/Users/tinmarbook/Dev/momo/relaystrio/lib/JPI/lib/cereal/include -Ilib/gzip-hpp/include/ -Ilib/zlib-esp32/src -DHAS_VERSION_HEADER"
         ],
         [
             "compiler.c.elf.extra_flags",
-            "-frtti"
+            "-Wpedantic -frtti -flto"
         ]
     ]
 }
