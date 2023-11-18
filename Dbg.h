@@ -1,4 +1,5 @@
 #pragma once
+#include <StreamString.h>
 struct Dbg {
   Dbg(const char *_prefix) : prefix(_prefix) {}
 
@@ -8,15 +9,16 @@ struct Dbg {
     (printWithSpace(a), ...);
     Serial.println("");
   }
+
   template <typename Arg> void printWithSpace(Arg a) {
     Serial.print(a);
     Serial.print(" ");
   }
 
-  void printWithSpace(const std::string &a) {
-    Serial.print(a.c_str());
-    Serial.print(" ");
-  }
+  // void printWithSpace(const std::string &a) {
+  //   Serial.print(a.c_str());
+  //   Serial.print(" ");
+  // }
 
   template <typename... Args> size_t printf(const char *format, Args... a) {
     Serial.print(prefix);
@@ -38,5 +40,17 @@ struct Dbg {
     }
     Serial.println("");
   }
+
+  template <typename... Args> String toStr(Args... a) const {
+    StreamString st;
+    (printStrWithSpace(a, st), ...);
+    return st;
+  }
+
+  template <typename Arg> void printStrWithSpace(Arg a, StreamString &ss) const {
+    ss.print(a);
+    ss.print(" ");
+  }
+
   const char *prefix;
 };
