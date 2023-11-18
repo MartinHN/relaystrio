@@ -94,10 +94,17 @@ void initWebServer(FileChangeCB cb) {
   Serial.println(webPort);
   // Send a GET request to <IP>/get?message=<message>
   // agendaFile
+
   server.on("/agendaFile", HTTP_GET, [](AsyncWebServerRequest *req) {
     Serial.println("getting agenda.json");
-    req->send(SPIFFS, "/agenda.json", "text/plain");
+    req->send(SPIFFS, "/agenda.json", "application/json");
   });
+
+  server.on("/agendaFile.md5", HTTP_GET, [](AsyncWebServerRequest *req) {
+    Serial.println("getting agenda.md5");
+    req->send(SPIFFS, "/agenda.json.md5", "text/plain");
+  });
+
   server.on(
       "/post/agendaFile", HTTP_POST,
       [](AsyncWebServerRequest *req) {
@@ -122,14 +129,21 @@ void initWebServer(FileChangeCB cb) {
   server.on("/version", HTTP_GET, [](AsyncWebServerRequest *req) {
     Serial.print("getting hash : ");
     Serial.println(GIT_HASH);
-    req->send(200, "application/text", GIT_HASH);
+    req->send(200, "text/plain", GIT_HASH);
+  });
+
+  server.on("/sketch.md5", HTTP_GET, [](AsyncWebServerRequest *req) {
+    Serial.print("getting sketch.md5 : ");
+    auto md = ESP.getSketchMD5();
+    Serial.println(md);
+    req->send(200, "text/plain", md);
   });
 
   server.on("/rssi", HTTP_GET, [](AsyncWebServerRequest *req) {
     Serial.print("getting rssi : ");
     String rssi(WiFi.RSSI());
     Serial.println(rssi);
-    req->send(200, "application/text", rssi);
+    req->send(200, "text/plain", rssi);
   });
   //
   // // niceName
@@ -184,9 +198,7 @@ void initWebServer(FileChangeCB cb) {
   });
   //   server.onRequestBody(onMyBody);
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
-  DefaultHeaders::Instance().addHeader(
-      "Access-Control-Allow-Method", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
-  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Header",
-                                       "Origin, Content-Type, X-Auth-Token");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Method", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Header", "Origin, Content-Type, X-Auth-Token");
   server.begin();
 }
