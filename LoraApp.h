@@ -258,7 +258,8 @@ void setup(std::string hostname) {
       if (!LoraPhy.readNext(pingType))
         FLUSH_RETURN_ERR("   corrupted ping msg no pingType to read");
       bool shouldSendMD5 = pingType == 1;
-      if (pingType > 1)
+      bool shouldSendMissingParts = pingType == 2;
+      if (pingType > 2)
         FLUSH_RETURN_ERR(dbg.toStr("   corrupted ping msg invalid pingType", pingType));
       uint8_t pingFlags;
       if (!LoraPhy.readNext(pingFlags))
@@ -309,11 +310,11 @@ void setup(std::string hostname) {
           pongMsg.push_back(md5.charAt(i));
         }
         pongMsg.push_back(0);
-
-        if (FileRcv.numMessageToWait)
-          for (const auto &m : FileRcv.getMissingIdces())
-            pongMsg.push_back(m);
       }
+      if (shouldSendMissingParts && FileRcv.numMessageToWait)
+        for (const auto &m : FileRcv.getMissingIdces())
+          pongMsg.push_back(m);
+
       LoraPhy.send(pongMsg.data(), pongMsg.size());
       dbg.print("   sent pong");
 
@@ -327,12 +328,23 @@ void setup(std::string hostname) {
       // Ignore pong
 
     } else if (msgType == MESSAGE_TYPE::ACTIVATE) {
+      uint8_t shouldAct;
+      LoraPhy.readNext(shouldAct);
       uint8_t uuid = 0;
-      LoraPhy.readNext(uuid);
-      if (uuid == 255 || uuid == loraUuid) {
-        uint8_t shouldAct;
-        LoraPhy.readNext(shouldAct);
-        dbg.print("   got act", shouldAct);
+      bool found = false;
+      while (LoraPhy.readNext(uuid)) {
+        if (uuid == 255 || uuid == loraUuid) {
+          found = true;
+          break;
+        }
+      }
+      if (found) {
+
+        dbg.print("   got act", shouldAct, "for", uuid);
+        if (uuid == 255) {
+          // broad cast disable agendas
+          onAgendaDisable(true);
+        }
         if (onActivate)
           onActivate(shouldAct);
         if (uuid != 255) {
