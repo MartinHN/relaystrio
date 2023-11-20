@@ -176,21 +176,21 @@ struct LoraPhyClass {
     if (!newLoraMsg)
       return;
     newLoraMsg = false;
-    // auto t = millis();
-    // int timeout = 300;
-    // if (e32ttl.available() == 0) {
-    //   dbg.print("waiting serial");
-    // }
-    // while (!(e32ttl.available() > 0)) {
-    //   if ((millis() - t) > timeout) {
-    //     dbg.print("!!!Timeout error!");
-    //     return;
-    //   }
-    // }
-    // if (!(e32ttl.available() > 0)) {
-    //   dbg.print("nothing available");
-    //   return;
-    // }
+    auto t = millis();
+    int timeout = 300;
+    if (e32ttl.available() == 0) {
+      dbg.print("waiting serial");
+    }
+    while (!(e32ttl.available() > 0)) {
+      if ((millis() - t) > timeout) {
+        dbg.print("!!!Timeout error!");
+        return;
+      }
+    }
+    if (!(e32ttl.available() > 0)) {
+      dbg.print("nothing available");
+      return;
+    }
 
     // dbg.print("parsing new msg");
     auto serialSize = HWSerial.readBytesUntil(0, loraMsgBuf, sizeof(loraMsgBuf));
@@ -251,9 +251,12 @@ struct LoraPhyClass {
   }
 
   uint32_t send(uint8_t *b, uint8_t len) {
+    if (len > 250) {
+      dbg.print("error to big of a message ");
+      return 0;
+    }
     if (phyState != PhyState::Tx)
       txMode();
-
     uint8_t lenOnWire = len + 2; // cobs  and trailing zero delimiter
     lastSentPacketByteLen = lenOnWire;
     for (int i = 0; i < len; i++)
@@ -264,7 +267,9 @@ struct LoraPhyClass {
     // !!!! next line is blocking
     // chk(e32ttl.sendMessage(&loraMsgOutBuf, len + 1));
     loraMsgOutBuf[lenOnWire - 1] = 0;
-    HWSerial.write(loraMsgOutBuf, lenOnWire);
+    dbg.print("sending lora : ");
+    dbg.printBuffer(loraMsgOutBuf, lenOnWire);
+    HWSerial.write(loraMsgOutBuf, size_t(lenOnWire));
     HWSerial.flush();
     flagTxMs = millis();
     lastTimeToSendFullPacket = flagTxMs - beforeSend;
