@@ -75,7 +75,14 @@ String getMD5ForFile(const String &filename) {
     return {};
   }
   String res = f.readString();
+  res.replace("\n", "");
   res.trim();
+  auto len = res.length();
+  if (len < 1 || len > 32) {
+    dbg.print("[md5] got weid ass md5 len", len);
+    f.close();
+    return {};
+  }
   f.close();
   return res;
 }
