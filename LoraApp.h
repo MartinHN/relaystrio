@@ -143,6 +143,8 @@ struct FileRcvT {
 }; // sruct FileRcvT
 namespace LoraApp {
 
+static std::vector<uint8_t> nextPongToSend = {};
+static unsigned long long timeToSendNextPong = 0;
 static FileRcvT FileRcv;
 
 int getNumberInHostName(std::string hn) {
@@ -249,7 +251,7 @@ void setup(std::string hostname) {
     dbg.print("new msg", msgType);
 
     if ((msgType == MESSAGE_TYPE::PING)) {
-
+      timeToSendNextPong = 0; // cancel current pending pong if any
       uint8_t isAgendaDisabled;
       if (!LoraPhy.readNext(isAgendaDisabled))
         FLUSH_RETURN_ERR("   corrupted ping msg no isAgendaDisabled to read");
@@ -278,6 +280,10 @@ void setup(std::string hostname) {
           break;
         }
         count++;
+        if (count > 250) {
+          dbg.print("!!!!!!!!!!!prevent overflow");
+          break;
+        }
       }
 
       if (idxInList == -1) {
@@ -291,32 +297,28 @@ void setup(std::string hostname) {
 
       // int sinceTrueRcvTime=millis()- LoraPhy.flagRxMs;
       int delayMs = idxInList * (int(slotTimecentiSeconds) * 10);
-      if (delayMs > 5000)
+      if (delayMs < 0 || delayMs > 5000)
         FLUSH_RETURN_ERR(dbg.toStr("   !!!!delayMs seems wrong", delayMs, "=", idxInList, "*", slotTimecentiSeconds));
 
       dbg.print("   sending pong in ", delayMs);
-      if (delayMs > 0)
-        delay(delayMs);
+      timeToSendNextPong = millis() + delayMs;
       bool active = false;
       if (isActive)
         active = isActive();
       else
         dbg.print("WTFFFFF");
 
-      std::vector<uint8_t> pongMsg = {MESSAGE_TYPE::PONG, loraUuid, active};
+      nextPongToSend = {MESSAGE_TYPE::PONG, loraUuid, active};
       if (shouldSendMD5) {
         auto md5 = getAgendaMD5();
-        for (int i = 0; i < md5.length(); i++) {
-          pongMsg.push_back(md5.charAt(i));
+        for (int i = 0; i < min((unsigned int)8, md5.length()); i++) {
+          nextPongToSend.push_back(md5.charAt(i));
         }
-        pongMsg.push_back(0);
+        nextPongToSend.push_back(0);
       }
       if (shouldSendMissingParts && FileRcv.numMessageToWait)
         for (const auto &m : FileRcv.getMissingIdces())
-          pongMsg.push_back(m);
-
-      LoraPhy.send(pongMsg.data(), pongMsg.size());
-      dbg.print("   sent pong");
+          nextPongToSend.push_back(m);
 
     } else if (msgType == MESSAGE_TYPE::SYNC) {
       auto strDate = LoraPhy.readString();
@@ -329,15 +331,22 @@ void setup(std::string hostname) {
 
     } else if (msgType == MESSAGE_TYPE::ACTIVATE) {
       uint8_t shouldAct;
+      
       LoraPhy.readNext(shouldAct);
       uint8_t uuid = 0;
       bool found = false;
+      int numInActivate = 0;
+      bool isMultiActivate = false;
       while (LoraPhy.readNext(uuid)) {
+        if (uuid == 255)
+          isMultiActivate = true;
         if (uuid == 255 || uuid == loraUuid) {
           found = true;
-          break;
         }
+        numInActivate++;
       }
+      isMultiActivate |= numInActivate > 1;
+      timeToSendNextPong = 0; // cancel current pending pong if any
       if (found) {
 
         dbg.print("   got act", shouldAct, "for", uuid);
@@ -347,14 +356,14 @@ void setup(std::string hostname) {
         }
         if (onActivate)
           onActivate(shouldAct);
-        if (uuid != 255) {
+        if (!isMultiActivate) {
           bool active = false;
           if (isActive)
             active = isActive();
           else
-            dbg.print("WTFFFFF2");
-          uint8_t pongMsg[] = {MESSAGE_TYPE::PONG, loraUuid, active};
-          LoraPhy.send(pongMsg, sizeof(pongMsg));
+            dbg.print("!!!!!!!WTFFFF2");
+          std::vector<uint8_t> pongMsg = {MESSAGE_TYPE::PONG, loraUuid, active};
+          LoraPhy.send(pongMsg.data(), pongMsg.size());
         }
       } else {
         dbg.print("   ign act for", uuid);
@@ -382,7 +391,19 @@ void setup(std::string hostname) {
 
 void end() { LoraPhy.end(); }
 
-void handle() { LoraPhy.handle(); }
+void handle() {
+  LoraPhy.handle();
+  auto now = millis();
+  if ((timeToSendNextPong != 0) && (now >= timeToSendNextPong)) {
+    timeToSendNextPong = 0;
+    if (nextPongToSend.size() == 0) {
+      dbg.print("!!!! no pong message to send");
+    } else {
+      LoraPhy.send(nextPongToSend.data(), nextPongToSend.size());
+      dbg.print("   sent pong");
+    }
+  }
+}
 
 }; // namespace LoraApp
 
