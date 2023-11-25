@@ -3,8 +3,9 @@
     "board": "esp32:esp32:esp32",
     "configuration": "PSRAM=disabled,PartitionScheme=min_spiffs,CPUFreq=80,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,LoopCore=1,EventsCore=1,DebugLevel=error,EraseFlash=none",
     "output": "build",
-    "port": "/dev/tty.usbserial-120",
+    "port": "/dev/tty.usbserial-1120",
     "prebuild": "./genVersionHeader.sh",
+    "postbuild": "./updateOTA.sh",
     "intelliSenseGen": "enable",
     "buildPreferences": [
         [

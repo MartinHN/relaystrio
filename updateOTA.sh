@@ -1,9 +1,11 @@
+#! /bin/bash
 # set -x
 PATH_TO_TOOLS="/Users/tinmarbook/Library/Arduino15/packages/esp32/hardware/esp32/2.0.5/tools"
 # PATH_TO_TOOLS="/home/tinmar/.arduino15/packages/esp32/hardware/esp32/1.0.6/tools"
-curH=$(git rev-parse HEAD)
+curH="$(md5sum build/relaystrio.ino.bin | grep -E -o "\w+ " | sed -e 's/ //g')" # $(git rev-parse HEAD)
 # serverAddr=http://lumestrio1.local:3003/knownDevices
 # serverAddr=http://localhost:3003/knownDevices
+
 missing=""
 uptodate=""
 updateds=""
@@ -11,10 +13,17 @@ failed=""
 
 if [ "$1" == "" ]; then
     tryAll=1
-elif [ $1 == "f" ]; then
-    tryAll=1
+elif [ "$1" == "f" ]; then
     force=1
+    shift
+    if [[ $1 == "" ]]; then
+        tryAll=1
+    fi
 fi
+
+# if [[ $tryAll == "1" ]]; then
+# sudo dscacheutil -flushcache &&     sudo killall -HUP mDNSResponder
+# fi
 
 function dbg() {
     echo $1 >&2
@@ -53,25 +62,35 @@ function getVersion() {
     fi
 }
 
+function getRemoteSketchMd5() {
+    v=$(curl --connect-timeout 5 "http://$1:3000/sketch.md5" --silent)
+    if [ $? != "0" ]; then
+        echo "-1"
+    else
+        echo $v
+    fi
+}
+
 function updateIfNeeded() {
     r=$(sed -e 's/"//g' <<<"$1")
     dbg "checking $r"
     if [ "$2" != "" ]; then
         v="force"
     else
-        v=$(getVersion "$r")
+        v=$(getRemoteSketchMd5 "$r")
     fi
-    if [ "$v" == "-1" ]; then
+    if [[ "$v" == "-1" ]]; then
         dbg "$r not connected"
         missing+="$r "
         echo 1
+        return
     fi
     if [ "${curH}" == "$v" ]; then
         dbg "already updated"
         uptodate+="$r "
         echo 2
     else
-        dbg "need update was ${v}, wants ${curH}"
+        dbg "$r need update was ${v}, wants ${curH},"
         upload $r
         if [ "$?" != "0" ]; then
             failed+="$r "
@@ -126,16 +145,44 @@ function updateRegisteredInServer() {
     dbg "failed update were :\n$(printNicenames "$kd" "$failed") "
 }
 
+function getResForUpload() {
+    ip=$(getIpFromHostName $1)
+    dbg "hostname $1 is $ip"
+    updateRes="3"
+    if [[ $ip ]]; then
+        updateRes=$(updateIfNeeded "$ip" "$force")
+    else
+        dbg "!!! not found ip for $1"
+    fi
+    echo $updateRes
+}
+
 function updateDiscovered() {
     hns=$(getAllHostNamesOnNetwork)
     missing_hns=""
     uptodate_hns=""
     failed_hns=""
     updated_hns=""
-    for hn in $hns; do
+    if [[ "$hns" == "" ]]; then
+        dbg "no hostnames found"
+        exit 1
+    fi
+    echo "checking $hns"
+    hns2=$hns
+    resCodes=""
+    . $(which env_parallel.bash)
+    # parset resCodes --progress -j50 $0 ::: $hns
+    parallel --progress -j50 $0 ::: $hns
+    # for updateRes in $resCodes; do
+    echo "got res $resCodes"
+    echo "got hns $hns"
+    i=0
+    for hn in $hns2; do
         # echo $i
-        ip=$(getIpFromHostName $hn)
-        updateRes=$(updateIfNeeded $ip $force)
+        updateRes="${resCodes[i]}"
+        i=$i+1
+        # updateRes=$(getResForUpload $hn)
+
         case $updateRes in
         "1")
             missing_hns="$missing_hns $hn"
@@ -170,7 +217,22 @@ if [ "$tryAll" == "1" ]; then
 
     # updateIfNeeded "relay_1.local"
 else
-    upload $1
+
+    for ADDR in "$@"; do
+        if [[ ${#ADDR} -lt 3 ]]; then
+            ADDR="relay_$ADDR.local"
+        fi
+        res=$(getResForUpload $ADDR)
+        # ip=$(getIpFromHostName $ADDR)
+        # if [[ $ip ]]; then
+        #     updateIfNeeded $ip $force
+        # else
+        #     echo "no ip found for $ADDR"
+        # fi
+
+    done
+
+    # getSketchMd5 $1
 fi
 
 exit 0

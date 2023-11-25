@@ -184,7 +184,7 @@ struct HourRange {
     DBGSCH(String(st));
     DBGSCH(" and ");
     DBGSCHLN(String(ed));
-    return dayMin >= st && dayMin <= ed;
+    return dayMin >= st && dayMin < ed;
   }
 };
 

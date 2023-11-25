@@ -40,9 +40,9 @@ uint8_t loraMsgBuf[253];
 uint8_t loraMsgSize = 0;
 uint8_t readIdx = 0;
 uint8_t loraMsgOutBuf[255];
-
 struct LoraPhyClass {
 
+  bool ignoreLora = false;
   volatile unsigned long flagTxMs = 0, flagRxMs = 0;
   std::function<void()> onRxFlag = {};
   // std::function<void()> onTxFlag = {};
@@ -158,7 +158,8 @@ struct LoraPhyClass {
 
   void handle() {
     // HWSerial.flush();
-
+    if (ignoreLora)
+      return;
     if (e32ttl.getMode() != MODE_TYPE::MODE_0_NORMAL) {
       dbg.print("!!!!!!!!! wrong lora mode");
       e32ttl.setMode(MODE_TYPE::MODE_0_NORMAL);

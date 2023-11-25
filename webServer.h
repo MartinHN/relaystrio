@@ -126,6 +126,14 @@ void initWebServer(FileChangeCB cb) {
       },
       nullptr, SPIFFSSetter("/info.json"));
 
+  server.on(
+      "/post/hostname", HTTP_POST,
+      [](AsyncWebServerRequest *req) {
+        Serial.println("got hostname mod");
+        req->send(200);
+      },
+      nullptr, SPIFFSSetter("/hostname.txt"));
+
   server.on("/version", HTTP_GET, [](AsyncWebServerRequest *req) {
     Serial.print("getting hash : ");
     Serial.println(GIT_HASH);
