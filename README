@@ -1,5 +1,6 @@
 ESP32 : basic relay announcing itslef and its capacities via JPI lib
 
+only works with esp-idf 4.x.x (arduino 2.0.5)
 
 Compile It
 ##
